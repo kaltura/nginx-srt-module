@@ -1,0 +1,85 @@
+ngx_addon_name=ngx_srt_module
+ngx_module_libs=
+
+
+# libsrt
+#
+ngx_feature="libsrt"
+ngx_feature_name="NGX_HAVE_LIBSRT"
+ngx_feature_run=no
+ngx_feature_incs="#include <srt/srt.h>"
+ngx_feature_path=
+ngx_feature_libs="-lsrt"
+ngx_feature_test="srt_startup();"
+. auto/feature
+
+if [ $ngx_found = no ]; then
+    echo "error: srt not found." 1>&2
+    exit 1
+fi
+
+ngx_module_libs="$ngx_module_libs $ngx_feature_libs"
+
+
+# sources
+#
+# XXXX update!
+SRT_CORE_DEPS="$ngx_addon_dir/src/ngx_srt.h                     \
+               $ngx_addon_dir/src/ngx_srt_connection.h          \
+               $ngx_addon_dir/src/ngx_srt_script.h              \
+               $ngx_addon_dir/src/ngx_srt_stream.h              \
+               $ngx_addon_dir/src/ngx_srt_upstream.h            \
+               $ngx_addon_dir/src/ngx_srt_variables.h           \
+               "
+
+SRT_CORE_SRCS="$ngx_addon_dir/src/ngx_srt.c                     \
+               $ngx_addon_dir/src/ngx_srt_connection.c          \
+               $ngx_addon_dir/src/ngx_srt_core_module.c         \
+               $ngx_addon_dir/src/ngx_srt_log_module.c          \
+               $ngx_addon_dir/src/ngx_srt_proxy_module.c        \
+               $ngx_addon_dir/src/ngx_srt_script.c              \
+               $ngx_addon_dir/src/ngx_srt_stream.c              \
+               $ngx_addon_dir/src/ngx_srt_upstream.c            \
+               $ngx_addon_dir/src/ngx_srt_variables.c           \
+               $ngx_addon_dir/src/ngx_srt_write_filter_module.c \
+               "
+
+SRT_STREAM_SRCS="                                               \
+               $ngx_addon_dir/src/ngx_stream_srt_proxy_module.c \
+               "
+
+SRT_CORE_MODS="ngx_srt_module                                   \
+               ngx_srt_core_module                              \
+               ngx_srt_log_module                               \
+               ngx_srt_proxy_module                             \
+               ngx_srt_upstream_module                          \
+               ngx_srt_write_filter_module                      \
+               "
+
+SRT_STREAM_MODULES="                                            \
+               ngx_stream_srt_proxy_module                      \
+               "
+
+
+if [ -n "$ngx_module_link" ]; then
+    ngx_module_type=CORE
+    ngx_module_name="$SRT_CORE_MODS"
+    ngx_module_deps="$SRT_CORE_DEPS"
+    ngx_module_srcs="$SRT_CORE_SRCS"
+
+    . auto/module
+
+    ngx_module_type=STREAM
+    ngx_module_name=$SRT_STREAM_MODULES
+    ngx_module_srcs=$SRT_STREAM_SRCS
+
+    . auto/module
+
+else
+    CORE_MODULES="$CORE_MODULES $SRT_CORE_MODS"
+    STREAM_MODULES="$STREAM_MODULES $SRT_STREAM_MODULES"
+
+    NGX_ADDON_DEPS="$NGX_ADDON_DEPS $SRT_CORE_DEPS"
+    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $SRT_CORE_SRCS $SRT_STREAM_SRCS"
+    CORE_LIBS="$CORE_LIBS $ngx_module_libs"
+fi
