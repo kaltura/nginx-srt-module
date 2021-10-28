@@ -23,7 +23,6 @@ ngx_module_libs="$ngx_module_libs $ngx_feature_libs"
 
 # sources
 #
-# XXXX update!
 SRT_CORE_DEPS="$ngx_addon_dir/src/ngx_srt.h                     \
                $ngx_addon_dir/src/ngx_srt_connection.h          \
                $ngx_addon_dir/src/ngx_srt_script.h              \
@@ -60,7 +59,6 @@ SRT_STREAM_MODULES="                                            \
                ngx_stream_srt_proxy_module                      \
                "
 
-
 if [ -n "$ngx_module_link" ]; then
     ngx_module_type=CORE
     ngx_module_name="$SRT_CORE_MODS"
@@ -69,17 +67,23 @@ if [ -n "$ngx_module_link" ]; then
 
     . auto/module
 
-    ngx_module_type=STREAM
-    ngx_module_name=$SRT_STREAM_MODULES
-    ngx_module_srcs=$SRT_STREAM_SRCS
+    if [ $STREAM != NO ]; then
+        ngx_module_type=STREAM
+        ngx_module_name=$SRT_STREAM_MODULES
+        ngx_module_srcs=$SRT_STREAM_SRCS
 
-    . auto/module
+        . auto/module
+    fi
 
 else
     CORE_MODULES="$CORE_MODULES $SRT_CORE_MODS"
-    STREAM_MODULES="$STREAM_MODULES $SRT_STREAM_MODULES"
 
     NGX_ADDON_DEPS="$NGX_ADDON_DEPS $SRT_CORE_DEPS"
-    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $SRT_CORE_SRCS $SRT_STREAM_SRCS"
+    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $SRT_CORE_SRCS"
     CORE_LIBS="$CORE_LIBS $ngx_module_libs"
+
+    if [ $STREAM != NO ]; then
+        STREAM_MODULES="$STREAM_MODULES $SRT_STREAM_MODULES"
+        NGX_ADDON_SRCS="$NGX_ADDON_SRCS $SRT_STREAM_SRCS"
+    fi
 fi

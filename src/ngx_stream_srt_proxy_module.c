@@ -127,9 +127,16 @@ ngx_stream_srt_proxy_handler(ngx_stream_session_t *s)
 
     pscf = ngx_stream_get_module_srv_conf(s, ngx_stream_srt_proxy_module);
 
-    if (ngx_stream_complex_value(s, pscf->stream_id, &stream_id) != NGX_OK) {
-        ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
-        return;
+    if (pscf->stream_id) {
+        if (ngx_stream_complex_value(s, pscf->stream_id, &stream_id)
+            != NGX_OK)
+        {
+            ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
+            return;
+        }
+
+    } else {
+        stream_id.len = 0;
     }
 
     c->log->action = "connecting to upstream";

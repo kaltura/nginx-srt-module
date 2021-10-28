@@ -905,6 +905,8 @@ ngx_srt_conn_write_handler(ngx_srt_conn_t *sc)
         break;
 
     case SRTS_CONNECTING:
+        ngx_log_debug1(NGX_LOG_DEBUG_EVENT, sc->srt_pool->log, 0,
+            "ngx_srt_conn_write_handler: socket %D connecting", ss);
         return;
 
     default:
@@ -936,6 +938,9 @@ ngx_srt_conn_write_handler(ngx_srt_conn_t *sc)
                 "ngx_srt_conn_write_handler: "
                 "srt_getsockflag(SRTO_PAYLOADSIZE) failed %d", serr);
             sc->payload_size = 1316;
+
+        } else if (sc->payload_size <= 0) {
+            sc->payload_size = NGX_MAX_INT32_VALUE;
         }
 
         ngx_log_error(NGX_LOG_INFO, sc->srt_pool->log, 0,
@@ -1362,7 +1367,7 @@ ngx_srt_conn_connect_handler(ngx_srt_conn_t *sc)
         }
     }
 
-    events = SRT_EPOLL_IN|SRT_EPOLL_ERR|SRT_EPOLL_ET;
+    events = SRT_EPOLL_IN|SRT_EPOLL_OUT|SRT_EPOLL_ERR|SRT_EPOLL_ET;
 
     ngx_log_debug2(NGX_LOG_DEBUG_EVENT, sc->srt_pool->log, 0,
         "ngx_srt_conn_connect: epoll add event: fd:%D ev:%08Xd", ss, events);
@@ -1388,7 +1393,7 @@ ngx_srt_conn_connect_handler(ngx_srt_conn_t *sc)
     }
 
     ngx_log_error(NGX_LOG_INFO, sc->srt_pool->log, 0,
-        "ngx_srt_conn_connect: socket %D connected to \"%V\", conn: %p",
+        "ngx_srt_conn_connect: socket %D connecting to \"%V\", conn: %p",
         ss, &c->addr_text, sc);
 
     ngx_srt_conn_post_ngx(sc, NGX_SRT_POST_WRITE);
@@ -1715,7 +1720,7 @@ ngx_srt_accept(ngx_srt_listening_t *sls)
     (void) ngx_atomic_fetch_add(ngx_stat_accepted, 1);
 #endif
 
-    events = SRT_EPOLL_IN|SRT_EPOLL_ERR|SRT_EPOLL_ET;
+    events = SRT_EPOLL_IN|SRT_EPOLL_OUT|SRT_EPOLL_ERR|SRT_EPOLL_ET;
 
     ngx_log_debug2(NGX_LOG_DEBUG_EVENT, &sls->ls->log, 0,
         "ngx_srt_accept: epoll add event: fd:%D ev:%08Xd", ss, events);

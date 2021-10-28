@@ -11,11 +11,11 @@ with the main nginx thread.
 
 To link statically against nginx, cd to nginx source directory and execute:
 
-    ./configure --add-module=/path/to/nginx-srt-module
+    ./configure --add-module=/path/to/nginx-srt-module --with-stream --with-threads
 
 To compile as a dynamic module (nginx 1.9.11+), use:
 
-    ./configure --add-dynamic-module=/path/to/nginx-srt-module
+    ./configure --add-dynamic-module=/path/to/nginx-srt-module --with-stream --with-threads
 
 In this case, the `load_module` directive should be used in nginx.conf to load the module.
 
