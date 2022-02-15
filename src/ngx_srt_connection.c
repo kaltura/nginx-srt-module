@@ -1467,6 +1467,7 @@ ngx_srt_conn_finalize(ngx_srt_conn_t *sc, ngx_uint_t rc)
 
         ngx_close_connection(pc);
         st->connection = NULL;
+        st->connected = 0;
         st->close_conn = 0;
     }
 
@@ -1532,6 +1533,7 @@ ngx_srt_conn_terminate(ngx_srt_conn_t *sc)
 
         ngx_close_connection(pc);
         st->connection = NULL;
+        st->connected = 0;
     }
 
     ngx_srt_conn_destroy(sc);
