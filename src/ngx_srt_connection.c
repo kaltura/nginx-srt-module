@@ -485,7 +485,7 @@ ngx_srt_conn_in_update_chains(ngx_srt_conn_t *sc, ngx_chain_t *out)
 
     ngx_spinlock(&sc->srt_in.lock, 1, 2048);
 
-    if (sc->srt_in.busy == NULL) {
+    if (sc->srt_in.busy == NULL && sc->srt_in.out == NULL) {
         notify = (b->end - b->last < NGX_SRT_MIN_RECV_SIZE);
         b->last = b->start;
 
