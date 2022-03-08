@@ -1187,13 +1187,11 @@ ngx_srt_conn_log_error(ngx_log_t *log, u_char *buf, size_t len)
 
 
 /* Context: SRT thread (accept) / NGX thread (connect) */
-ngx_srt_conn_t *
-ngx_srt_conn_create(ngx_log_t *error_log, size_t in_buf_size)
+static ngx_srt_conn_t *
+ngx_srt_conn_alloc(ngx_log_t *error_log)
 {
-    ngx_buf_t         *b;
-    ngx_time_t        *tp;
     ngx_pool_t        *pool;
-    ngx_event_t       *rev, *wev;
+    ngx_time_t        *tp;
     ngx_srt_conn_t    *sc;
     ngx_connection_t  *c;
 
@@ -1211,6 +1209,47 @@ ngx_srt_conn_create(ngx_log_t *error_log, size_t in_buf_size)
     if (c == NULL) {
         goto failed;
     }
+
+    c->type = SOCK_STREAM;
+    c->pool = pool;
+
+    c->log = pool->log;
+    c->log->action = "initializing session";
+
+    sc->connection = c;
+    c->data = sc;
+
+    tp = ngx_timeofday();
+    sc->start_sec = tp->sec;
+    sc->start_msec = tp->msec;
+
+    return sc;
+
+failed:
+
+    ngx_destroy_pool(pool);
+
+    return NULL;
+}
+
+
+/* Context: SRT thread (accept) / NGX thread (connect) */
+ngx_srt_conn_t *
+ngx_srt_conn_create(ngx_log_t *error_log, size_t in_buf_size)
+{
+    ngx_buf_t         *b;
+    ngx_pool_t        *pool;
+    ngx_event_t       *rev, *wev;
+    ngx_srt_conn_t    *sc;
+    ngx_connection_t  *c;
+
+    sc = ngx_srt_conn_alloc(error_log);
+    if (sc == NULL) {
+        return NULL;
+    }
+
+    c = sc->connection;
+    pool = c->pool;
 
     rev = ngx_pcalloc(pool, sizeof(ngx_event_t));
     if (rev == NULL) {
@@ -1249,26 +1288,13 @@ ngx_srt_conn_create(ngx_log_t *error_log, size_t in_buf_size)
     c->read = rev;
     c->write = wev;
 
-    c->type = SOCK_STREAM;
-    c->pool = pool;
-
     c->send_chain = ngx_srt_send_chain;
 
     c->number = ngx_atomic_fetch_add(ngx_connection_counter, 1);
-
-    c->log = pool->log;
     c->log->connection = c->number;
-    c->log->action = "initializing session";
 
     sc->srt_pool->log->connection = c->number;
     c->log_error = NGX_ERROR_INFO;
-
-    sc->connection = c;
-    c->data = sc;
-
-    tp = ngx_timeofday();
-    sc->start_sec = tp->sec;
-    sc->start_msec = tp->msec;
 
     c->fd = SRT_INVALID_SOCK;
     sc->node.key = SRT_INVALID_SOCK;
@@ -1306,7 +1332,7 @@ ngx_srt_conn_attach(ngx_srt_conn_t *sc, SRTSOCKET ss)
 /* Context: NGX thread */
 ngx_srt_conn_t *
 ngx_srt_conn_create_connect(ngx_log_t *log, ngx_url_t *url, size_t in_buf_size,
-    ngx_str_t *stream_id)
+    ngx_str_t *stream_id, ngx_str_t *passphrase)
 {
     ngx_srt_conn_t    *sc;
     ngx_connection_t  *c;
@@ -1323,7 +1349,7 @@ ngx_srt_conn_create_connect(ngx_log_t *log, ngx_url_t *url, size_t in_buf_size,
     c->socklen = url->socklen;
 
     if (stream_id->len > 0) {
-        sc->stream_id.data = ngx_pnalloc(c->pool, stream_id->len);
+        sc->stream_id.data = ngx_pstrdup(c->pool, stream_id);
         if (sc->stream_id.data == NULL) {
             ngx_log_error(NGX_LOG_NOTICE, sc->srt_pool->log, 0,
                 "ngx_srt_conn_create_connect: alloc stream id failed");
@@ -1331,8 +1357,19 @@ ngx_srt_conn_create_connect(ngx_log_t *log, ngx_url_t *url, size_t in_buf_size,
             return NULL;
         }
 
-        ngx_memcpy(sc->stream_id.data, stream_id->data, stream_id->len);
         sc->stream_id.len = stream_id->len;
+    }
+
+    if (passphrase->len > 0) {
+        sc->passphrase.data = ngx_pstrdup(c->pool, passphrase);
+        if (sc->passphrase.data == NULL) {
+            ngx_log_error(NGX_LOG_NOTICE, sc->srt_pool->log, 0,
+                "ngx_srt_conn_create_connect: alloc passphrase failed");
+            ngx_srt_conn_destroy(sc);
+            return NULL;
+        }
+
+        sc->passphrase.len = passphrase->len;
     }
 
     ngx_srt_conn_post_srt(sc, NGX_SRT_POST_CONNECT);
@@ -1363,6 +1400,18 @@ ngx_srt_conn_connect_handler(ngx_srt_conn_t *sc)
             ngx_log_error(NGX_LOG_ERR, sc->srt_pool->log, serrno,
                 "ngx_srt_conn_connect: "
                 "srt_setsockflag(SRTO_STREAMID) failed %d", serr);
+            goto failed;
+        }
+    }
+
+    if (sc->passphrase.len > 0) {
+        if (srt_setsockflag(ss, SRTO_PASSPHRASE,
+            sc->passphrase.data, sc->passphrase.len) != 0)
+        {
+            serr = srt_getlasterror(&serrno);
+            ngx_log_error(NGX_LOG_ERR, sc->srt_pool->log, serrno,
+                "ngx_srt_conn_connect: "
+                "srt_setsockflag(SRTO_PASSPHRASE) failed %d", serr);
             goto failed;
         }
     }
@@ -1585,6 +1634,40 @@ ngx_srt_conn_accept_handler(ngx_event_t *ev)
 
 /* Context: SRT thread */
 static ngx_int_t
+ngx_srt_conn_set_remote_addr(ngx_connection_t *c,
+    const struct sockaddr *sockaddr, int socklen)
+{
+    c->sockaddr = ngx_palloc(c->pool, socklen);
+    if (c->sockaddr == NULL) {
+        ngx_log_error(NGX_LOG_NOTICE, c->log, 0,
+            "ngx_srt_conn_set_remote_addr: alloc sockaddr failed");
+        return NGX_ERROR;
+    }
+
+    ngx_memcpy(c->sockaddr, sockaddr, socklen);
+    c->socklen = socklen;
+
+    c->addr_text.data = ngx_pnalloc(c->pool, NGX_SOCKADDR_STRLEN);
+    if (c->addr_text.data == NULL) {
+        ngx_log_error(NGX_LOG_NOTICE, c->log, 0,
+            "ngx_srt_conn_set_remote_addr: alloc addr text failed");
+        return NGX_ERROR;
+    }
+
+    c->addr_text.len = ngx_sock_ntop(c->sockaddr, c->socklen,
+        c->addr_text.data, NGX_SOCKADDR_STRLEN, 1);
+    if (c->addr_text.len == 0) {
+        ngx_log_error(NGX_LOG_NOTICE, c->log, 0,
+            "ngx_srt_conn_set_remote_addr: ngx_sock_ntop() failed");
+        return NGX_ERROR;
+    }
+
+    return NGX_OK;
+}
+
+
+/* Context: SRT thread */
+static ngx_int_t
 ngx_srt_conn_accept(ngx_srt_listening_t *sls, SRTSOCKET ss,
     struct sockaddr *sockaddr, int socklen)
 {
@@ -1634,28 +1717,7 @@ ngx_srt_conn_accept(ngx_srt_listening_t *sls, SRTSOCKET ss,
 
     /* get remote addr */
 
-    c->sockaddr = ngx_palloc(c->pool, socklen);
-    if (c->sockaddr == NULL) {
-        ngx_log_error(NGX_LOG_NOTICE, sc->srt_pool->log, 0,
-            "ngx_srt_conn_accept: alloc sockaddr failed");
-        goto failed;
-    }
-
-    ngx_memcpy(c->sockaddr, sockaddr, socklen);
-    c->socklen = socklen;
-
-    c->addr_text.data = ngx_pnalloc(c->pool, NGX_SOCKADDR_STRLEN);
-    if (c->addr_text.data == NULL) {
-        ngx_log_error(NGX_LOG_NOTICE, sc->srt_pool->log, 0,
-            "ngx_srt_conn_accept: alloc addr text failed");
-        goto failed;
-    }
-
-    c->addr_text.len = ngx_sock_ntop(c->sockaddr, c->socklen,
-        c->addr_text.data, NGX_SOCKADDR_STRLEN, 1);
-    if (c->addr_text.len == 0) {
-        ngx_log_error(NGX_LOG_NOTICE, sc->srt_pool->log, 0,
-            "ngx_srt_conn_accept: ngx_sock_ntop() failed");
+    if (ngx_srt_conn_set_remote_addr(c, sockaddr, socklen) != NGX_OK) {
         goto failed;
     }
 
@@ -1755,6 +1817,112 @@ failed:
 }
 
 
+/* Context: libsrt accept thread */
+static int
+ngx_srt_listen_callback(void *data, SRTSOCKET ns, int hs_version,
+    const struct sockaddr *peeraddr, const char *stream_id)
+{
+    int                       socklen;
+    int                       serr, serrno;
+    ngx_str_t                 value;
+    ngx_log_t                *log;
+    ngx_srt_conn_t           *sc;
+    ngx_connection_t         *c;
+    ngx_srt_session_t        *s;
+    ngx_srt_conf_ctx_t       *ctx;
+    ngx_srt_listening_t      *sls = data;
+    ngx_srt_core_srv_conf_t  *cscf;
+
+    ctx = sls->ls->servers;
+
+    cscf = ngx_srt_get_module_srv_conf(ctx, ngx_srt_core_module);
+
+    if (cscf->passphrase == NULL) {
+        return 0;
+    }
+
+    /* allocate temp session for variable eval */
+    log = cscf->error_log;
+
+    sc = ngx_srt_conn_alloc(log);
+    if (sc == NULL) {
+        ngx_log_error(NGX_LOG_NOTICE, log, 0,
+            "ngx_srt_listen_callback: alloc conn failed");
+        return -1;
+    }
+
+    c = sc->connection;
+    c->listening = sls->ls;
+    sc->srt_pool = c->pool;
+
+    s = ngx_srt_init_session(sc);
+    if (s == NULL) {
+        ngx_log_error(NGX_LOG_NOTICE, log, 0,
+            "ngx_srt_listen_callback: init session failed");
+        goto failed;
+    }
+
+    /* initialize fields used by variable handlers */
+    switch (peeraddr->sa_family) {
+
+    case AF_INET:
+        socklen = sizeof(struct sockaddr_in);
+        break;
+
+    case AF_INET6:
+        socklen = sizeof(struct sockaddr_in6);
+        break;
+
+    default:
+        socklen = 0;
+    }
+
+    if (ngx_srt_conn_set_remote_addr(c, peeraddr, socklen) != NGX_OK) {
+        goto failed;
+    }
+
+    sc->stream_id.data = (u_char *) stream_id;
+    sc->stream_id.len = ngx_strlen(stream_id);
+
+    /* evaluate the passphrase */
+    if (ngx_srt_complex_value(s, cscf->passphrase, &value) != NGX_OK) {
+        ngx_log_error(NGX_LOG_NOTICE, log, 0,
+            "ngx_srt_listen_callback: complex value failed");
+        goto failed;
+    }
+
+    if (value.len == 0) {
+        ngx_destroy_pool(c->pool);
+        return 0;
+    }
+
+    /* set the passphrase */
+    if (value.len < 10 || value.len >= 80) {
+        ngx_log_error(NGX_LOG_ERR, log, 0,
+            "ngx_srt_listen_callback: invalid passphrase \"%V\"", &value);
+        goto failed;
+    }
+
+    if (srt_setsockflag(ns, SRTO_PASSPHRASE, value.data, value.len) != 0) {
+        serr = srt_getlasterror(&serrno);
+        ngx_log_error(NGX_LOG_ERR, log, serrno,
+            "ngx_srt_listen_callback: "
+            "srt_setsockflag(SRTO_PASSPHRASE) failed %d", serr);
+        goto failed;
+    }
+
+    ngx_destroy_pool(c->pool);
+
+    return 0;
+
+failed:
+
+    ngx_destroy_pool(c->pool);
+
+    return -1;
+}
+
+
 /* Context: SRT thread */
 ngx_int_t
 ngx_srt_listen(ngx_cycle_t *cycle, ngx_listening_t *ls, ngx_log_t *error_log,
@@ -1802,6 +1970,13 @@ ngx_srt_listen(ngx_cycle_t *cycle, ngx_listening_t *ls, ngx_log_t *error_log,
     if (sls == NULL) {
         ngx_log_error(NGX_LOG_NOTICE, cycle->log, 0,
             "ngx_srt_listen: ngx_srt_listen: alloc session failed");
+        return NGX_ERROR;
+    }
+
+    if (srt_listen_callback(ss, ngx_srt_listen_callback, sls) != 0) {
+        serr = srt_getlasterror(&serrno);
+        ngx_log_error(NGX_LOG_EMERG, cycle->log, serrno,
+            "ngx_srt_listen: srt_listen_callback() failed %d", serr);
         return NGX_ERROR;
     }
 

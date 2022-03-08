@@ -10,6 +10,7 @@ typedef struct {
     ngx_msec_t                    timeout;
     size_t                        buffer_size;
     ngx_stream_complex_value_t   *stream_id;
+    ngx_stream_complex_value_t   *passphrase;
 } ngx_stream_srt_proxy_srv_conf_t;
 
 
@@ -73,6 +74,13 @@ static ngx_command_t  ngx_stream_srt_proxy_commands[] = {
       offsetof(ngx_stream_srt_proxy_srv_conf_t, stream_id),
       NULL },
 
+    { ngx_string("srt_proxy_passphrase"),
+      NGX_STREAM_MAIN_CONF|NGX_STREAM_SRV_CONF|NGX_CONF_TAKE1,
+      ngx_stream_set_complex_value_slot,
+      NGX_STREAM_SRV_CONF_OFFSET,
+      offsetof(ngx_stream_srt_proxy_srv_conf_t, passphrase),
+      NULL },
+
       ngx_null_command
 };
 
@@ -110,6 +118,7 @@ ngx_stream_srt_proxy_handler(ngx_stream_session_t *s)
 {
     u_char                           *p;
     ngx_str_t                         stream_id;
+    ngx_str_t                         passphrase;
     ngx_srt_conn_t                   *sc;
     ngx_connection_t                 *c, *pc;
     ngx_srt_stream_t                 *st;
@@ -139,10 +148,22 @@ ngx_stream_srt_proxy_handler(ngx_stream_session_t *s)
         stream_id.len = 0;
     }
 
+    if (pscf->passphrase) {
+        if (ngx_stream_complex_value(s, pscf->passphrase, &passphrase)
+            != NGX_OK)
+        {
+            ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
+            return;
+        }
+
+    } else {
+        passphrase.len = 0;
+    }
+
     c->log->action = "connecting to upstream";
 
     sc = ngx_srt_conn_create_connect(s->connection->log, pscf->url,
-        pscf->buffer_size, &stream_id);
+        pscf->buffer_size, &stream_id, &passphrase);
     if (sc == NULL) {
         ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
         return;
@@ -556,6 +577,10 @@ ngx_stream_srt_proxy_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     if (conf->stream_id == NULL) {
         conf->stream_id = prev->stream_id;
+    }
+
+    if (conf->passphrase == NULL) {
+        conf->passphrase = prev->passphrase;
     }
 
     return NGX_CONF_OK;

@@ -534,7 +534,7 @@ ngx_srt_init_listening(ngx_cycle_t *cycle, void *conf)
 }
 
 
-static ngx_srt_session_t *
+ngx_srt_session_t *
 ngx_srt_init_session(ngx_srt_conn_t *sc)
 {
     ngx_connection_t          *c;

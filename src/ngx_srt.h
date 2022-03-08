@@ -96,6 +96,7 @@ typedef struct {
     size_t                         in_buf_size;
 
     ngx_srt_conn_options_t         srt_opts;
+    ngx_srt_complex_value_t       *passphrase;
 } ngx_srt_core_srv_conf_t;
 
 
@@ -178,6 +179,8 @@ extern ngx_module_t  ngx_srt_core_module;
 
 
 ngx_int_t ngx_srt_start_listening(ngx_cycle_t *cycle);
+
+ngx_srt_session_t *ngx_srt_init_session(ngx_srt_conn_t *sc);
 
 
 typedef ngx_int_t (*ngx_srt_filter_pt)(ngx_srt_conn_t *sc,

@@ -159,6 +159,15 @@ The minimum receiving latency, provided by the sender.
 
 See the libsrt documentation of the `SRTO_PEERLATENCY` option for more details.
 
+#### passphrase
+* **syntax**: `passphrase expr;`
+* **default**: ``
+* **context**: `srt, server`
+
+Sets a passphrase for encryption, see the libsrt documentation of the `SRTO_PASSPHRASE` option for more details.
+
+The parameter value can contain variables.
+
 #### in_buf_size
 * **syntax**: `in_buf_size size;`
 * **default**: `64k`
@@ -279,6 +288,15 @@ Sets the size of the buffer used for reading data from the proxied server.
 * **context**: `srt, server`
 
 Sets the SRT stream id, see the libsrt documentation of the `SRTO_STREAMID` option for more details.
+
+The parameter value can contain variables.
+
+#### srt_proxy_passphrase
+* **syntax**: `srt_proxy_passphrase expr;`
+* **default**: ``
+* **context**: `srt, server`
+
+Sets a passphrase for encryption, see the libsrt documentation of the `SRTO_PASSPHRASE` option for more details.
 
 The parameter value can contain variables.
 

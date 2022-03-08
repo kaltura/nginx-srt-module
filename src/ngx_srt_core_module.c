@@ -127,6 +127,13 @@ static ngx_command_t  ngx_srt_core_commands[] = {
       offsetof(ngx_srt_core_srv_conf_t, srt_opts.send_latency),
       NULL },
 
+    { ngx_string("passphrase"),
+      NGX_SRT_MAIN_CONF|NGX_SRT_SRV_CONF|NGX_CONF_TAKE1,
+      ngx_srt_set_complex_value_slot,
+      NGX_SRT_SRV_CONF_OFFSET,
+      offsetof(ngx_srt_core_srv_conf_t, passphrase),
+      NULL },
+
       ngx_null_command
 };
 
@@ -267,6 +274,10 @@ ngx_srt_core_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_size_value(conf->in_buf_size, prev->in_buf_size, 64 * 1024);
 
     ngx_srt_merge_options(&conf->srt_opts, &prev->srt_opts);
+
+    if (conf->passphrase == NULL) {
+        conf->passphrase = prev->passphrase;
+    }
 
     return NGX_CONF_OK;
 }
