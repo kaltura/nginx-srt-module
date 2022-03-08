@@ -105,4 +105,7 @@ void *ngx_srt_map_find(ngx_srt_session_t *s, ngx_srt_map_t *map,
 ngx_int_t ngx_srt_variables_add_core_vars(ngx_conf_t *cf);
 ngx_int_t ngx_srt_variables_init_vars(ngx_conf_t *cf);
 
+
+extern ngx_srt_variable_value_t  ngx_srt_variable_null_value;
+
 #endif /* _NGX_SRT_VARIABLES_H_INCLUDED_ */
