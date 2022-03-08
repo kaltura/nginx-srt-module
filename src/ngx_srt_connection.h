@@ -68,6 +68,7 @@ struct ngx_srt_conn_s {
     void                        *upstream;          /* ngx */
 
     ngx_str_t                    stream_id;
+    ngx_str_t                    passphrase;
     uint32_t                     peer_version;
     uint32_t                     payload_size;
 
@@ -106,7 +107,7 @@ ngx_int_t ngx_srt_listen(ngx_cycle_t *cycle, ngx_listening_t *ls,
     ngx_log_t *error_log, size_t in_buf_size, ngx_srt_conn_options_t *opts);
 
 ngx_srt_conn_t *ngx_srt_conn_create_connect(ngx_log_t *log, ngx_url_t *url,
-    size_t in_buf_size, ngx_str_t *stream_id);
+    size_t in_buf_size, ngx_str_t *stream_id, ngx_str_t *passphrase);
 
 void ngx_srt_conn_finalize(ngx_srt_conn_t *sc, ngx_uint_t rc);
 
