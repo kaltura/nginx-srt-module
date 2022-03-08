@@ -116,6 +116,9 @@ static ngx_srt_variable_t  ngx_srt_core_variables[] = {
 };
 
 
+ngx_srt_variable_value_t  ngx_srt_variable_null_value =
+    ngx_srt_variable("");
+
 static ngx_uint_t  ngx_srt_variable_depth = 100;
 
 
