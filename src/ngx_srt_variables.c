@@ -1070,7 +1070,7 @@ ngx_srt_regex_exec(ngx_srt_session_t *s, ngx_srt_regex_t *re,
 
         v = cmcf->variables.elts;
 
-        ngx_log_debug2(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
+        ngx_log_debug2(NGX_LOG_DEBUG_SRT, s->connection->log, 0,
                        "srt regex set $%V to \"%v\"", &v[index].name, vv);
         }
 #endif

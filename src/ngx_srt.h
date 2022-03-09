@@ -22,6 +22,9 @@ typedef struct ngx_srt_conn_s     ngx_srt_conn_t;
 #define NGX_SRT_BAD_GATEWAY               502
 
 
+#define NGX_LOG_DEBUG_SRT                 NGX_LOG_DEBUG_STREAM
+
+
 typedef struct {
     void                         **main_conf;
     void                         **srv_conf;

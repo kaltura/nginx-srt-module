@@ -706,7 +706,7 @@ ngx_srt_script_copy_code(ngx_srt_script_engine_t *e)
     e->ip += sizeof(ngx_srt_script_copy_code_t)
           + ((code->len + sizeof(uintptr_t) - 1) & ~(sizeof(uintptr_t) - 1));
 
-    ngx_log_debug2(NGX_LOG_DEBUG_STREAM, e->session->connection->log, 0,
+    ngx_log_debug2(NGX_LOG_DEBUG_SRT, e->session->connection->log, 0,
                    "srt script copy: \"%*s\"", e->pos - p, p);
 }
 
@@ -806,7 +806,7 @@ ngx_srt_script_copy_var_code(ngx_srt_script_engine_t *e)
             p = e->pos;
             e->pos = ngx_copy(p, value->data, value->len);
 
-            ngx_log_debug2(NGX_LOG_DEBUG_STREAM,
+            ngx_log_debug2(NGX_LOG_DEBUG_SRT,
                            e->session->connection->log, 0,
                            "srt script var: \"%*s\"", e->pos - p, p);
         }
@@ -902,7 +902,7 @@ ngx_srt_script_copy_capture_code(ngx_srt_script_engine_t *e)
         e->pos = ngx_copy(pos, &p[cap[n]], cap[n + 1] - cap[n]);
     }
 
-    ngx_log_debug2(NGX_LOG_DEBUG_STREAM, e->session->connection->log, 0,
+    ngx_log_debug2(NGX_LOG_DEBUG_SRT, e->session->connection->log, 0,
                    "srt script capture: \"%*s\"", e->pos - pos, pos);
 }
 
@@ -976,7 +976,7 @@ ngx_srt_script_full_name_code(ngx_srt_script_engine_t *e)
 
     e->buf = value;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_STREAM, e->session->connection->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_SRT, e->session->connection->log, 0,
                    "srt script fullname: \"%V\"", &value);
 
     e->ip += sizeof(ngx_srt_script_full_name_code_t);

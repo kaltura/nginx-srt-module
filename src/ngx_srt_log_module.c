@@ -211,8 +211,8 @@ ngx_srt_log_handler(ngx_srt_session_t *s)
     ngx_srt_log_buf_t       *buffer;
     ngx_srt_log_srv_conf_t  *lscf;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
-                   "stream log handler");
+    ngx_log_debug0(NGX_LOG_DEBUG_SRT, s->connection->log, 0,
+                   "srt log handler");
 
     lscf = ngx_srt_get_module_srv_conf(s, ngx_srt_log_module);
 
@@ -437,8 +437,8 @@ ngx_srt_log_script_write(ngx_srt_session_t *s,
     log.data[log.len - 1] = '\0';
     *name = log.data;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
-                   "stream log \"%s\"", log.data);
+    ngx_log_debug1(NGX_LOG_DEBUG_SRT, s->connection->log, 0,
+                   "srt log \"%s\"", log.data);
 
     lscf = ngx_srt_get_module_srv_conf(s, ngx_srt_log_module);
 
@@ -464,8 +464,8 @@ ngx_srt_log_script_write(ngx_srt_session_t *s,
         return len;
     }
 
-    ngx_log_debug1(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
-                   "stream log #%d", of.fd);
+    ngx_log_debug1(NGX_LOG_DEBUG_SRT, s->connection->log, 0,
+                   "srt log #%d", of.fd);
 
     n = ngx_write_fd(of.fd, buf, len);
 
@@ -534,7 +534,7 @@ ngx_srt_log_gzip(ngx_fd_t fd, u_char *buf, size_t len, ngx_int_t level,
         goto done;
     }
 
-    ngx_log_debug4(NGX_LOG_DEBUG_STREAM, log, 0,
+    ngx_log_debug4(NGX_LOG_DEBUG_SRT, log, 0,
                    "deflate in: ni:%p no:%p ai:%ud ao:%ud",
                    zstream.next_in, zstream.next_out,
                    zstream.avail_in, zstream.avail_out);
@@ -547,7 +547,7 @@ ngx_srt_log_gzip(ngx_fd_t fd, u_char *buf, size_t len, ngx_int_t level,
         goto done;
     }
 
-    ngx_log_debug5(NGX_LOG_DEBUG_STREAM, log, 0,
+    ngx_log_debug5(NGX_LOG_DEBUG_SRT, log, 0,
                    "deflate out: ni:%p no:%p ai:%ud ao:%ud rc:%d",
                    zstream.next_in, zstream.next_out,
                    zstream.avail_in, zstream.avail_out,
@@ -587,7 +587,7 @@ ngx_srt_log_gzip_alloc(void *opaque, u_int items, u_int size)
 {
     ngx_pool_t *pool = opaque;
 
-    ngx_log_debug2(NGX_LOG_DEBUG_STREAM, pool->log, 0,
+    ngx_log_debug2(NGX_LOG_DEBUG_SRT, pool->log, 0,
                    "gzip alloc: n:%ud s:%ud", items, size);
 
     return ngx_palloc(pool, items * size);
@@ -600,7 +600,7 @@ ngx_srt_log_gzip_free(void *opaque, void *address)
 #if 0
     ngx_pool_t *pool = opaque;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_STREAM, pool->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_SRT, pool->log, 0,
                    "gzip free: %p", address);
 #endif
 }
@@ -657,7 +657,7 @@ static void
 ngx_srt_log_flush_handler(ngx_event_t *ev)
 {
     ngx_log_debug0(NGX_LOG_DEBUG_EVENT, ev->log, 0,
-                   "stream log buffer flush handler");
+                   "srt log buffer flush handler");
 
     ngx_srt_log_flush(ev->data, ev->log);
 }
