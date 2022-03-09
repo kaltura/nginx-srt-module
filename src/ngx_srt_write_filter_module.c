@@ -213,7 +213,7 @@ ngx_srt_write_filter(ngx_srt_conn_t *sc, ngx_chain_t *in,
 
     *ll = NULL;
 
-    ngx_log_debug3(NGX_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug3(NGX_LOG_DEBUG_SRT, c->log, 0,
                    "srt write filter: l:%ui f:%ui s:%O", last, flush, size);
 
     if (size == 0
@@ -244,7 +244,7 @@ ngx_srt_write_filter(ngx_srt_conn_t *sc, ngx_chain_t *in,
 
     chain = c->send_chain(c, *out, 0);
 
-    ngx_log_debug1(NGX_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_SRT, c->log, 0,
                    "srt write filter %p", chain);
 
     if (chain == NGX_CHAIN_ERROR) {

@@ -136,7 +136,7 @@ ngx_srt_proxy_handler(ngx_srt_session_t *s)
     sc = s->sc;
     c = sc->connection;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug0(NGX_LOG_DEBUG_SRT, c->log, 0,
         "ngx_srt_proxy_handler: called");
 
     st = ngx_pcalloc(c->pool, sizeof(ngx_srt_stream_t));
@@ -232,7 +232,7 @@ ngx_srt_proxy_connect(ngx_srt_session_t *s)
 
     rc = ngx_event_connect_peer(peer);
 
-    ngx_log_debug1(NGX_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_SRT, c->log, 0,
         "ngx_srt_proxy_connect: proxy connect: %i", rc);
 
     if (rc == NGX_ERROR) {
@@ -360,7 +360,7 @@ ngx_srt_proxy_init_upstream(ngx_srt_session_t *s)
     }
 
     if (u->proxy_protocol) {
-        ngx_log_debug0(NGX_LOG_DEBUG_STREAM, c->log, 0,
+        ngx_log_debug0(NGX_LOG_DEBUG_SRT, c->log, 0,
             "ngx_srt_proxy_init_upstream: add PROXY protocol header");
 
         p = ngx_pnalloc(c->pool, NGX_PROXY_PROTOCOL_MAX_HEADER);
@@ -538,7 +538,7 @@ ngx_srt_proxy_connect_handler(ngx_event_t *ev)
 
     ngx_del_timer(pc->write);
 
-    ngx_log_debug0(NGX_LOG_DEBUG_STREAM, pc->log, 0,
+    ngx_log_debug0(NGX_LOG_DEBUG_SRT, pc->log, 0,
         "ngx_srt_proxy_connect_handler: called");
 
 

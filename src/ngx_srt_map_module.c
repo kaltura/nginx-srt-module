@@ -112,7 +112,7 @@ ngx_srt_map_variable(ngx_srt_session_t *s, ngx_srt_variable_value_t *v,
     ngx_srt_complex_value_t   *cv;
     ngx_srt_variable_value_t  *value;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
+    ngx_log_debug0(NGX_LOG_DEBUG_SRT, s->connection->log, 0,
                    "srt map started");
 
     if (ngx_srt_complex_value(s, &map->value, &val) != NGX_OK) {
@@ -146,7 +146,7 @@ ngx_srt_map_variable(ngx_srt_session_t *s, ngx_srt_variable_value_t *v,
         *v = *value;
     }
 
-    ngx_log_debug2(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
+    ngx_log_debug2(NGX_LOG_DEBUG_SRT, s->connection->log, 0,
                    "srt map: \"%V\" \"%v\"", &val, v);
 
     return NGX_OK;

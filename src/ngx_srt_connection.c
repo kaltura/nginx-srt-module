@@ -608,7 +608,7 @@ ngx_srt_conn_recv(ngx_srt_conn_t *sc)
 
         size = b->end - p;
         if (size < NGX_SRT_MIN_RECV_SIZE) {
-            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, sc->srt_pool->log, 0,
+            ngx_log_debug1(NGX_LOG_DEBUG_SRT, sc->srt_pool->log, 0,
                 "ngx_srt_conn_recv: input buffer too small, size: %uz", size);
             break;
         }
@@ -626,7 +626,7 @@ ngx_srt_conn_recv(ngx_srt_conn_t *sc)
             return NGX_ERROR;
         }
 
-        ngx_log_debug3(NGX_LOG_DEBUG_HTTP, sc->srt_pool->log, 0,
+        ngx_log_debug3(NGX_LOG_DEBUG_SRT, sc->srt_pool->log, 0,
             "ngx_srt_conn_recv: srt recv %d, fd: %D, size: %uz", n, ss, size);
 
         p += n;
@@ -860,7 +860,7 @@ ngx_srt_conn_send(ngx_srt_conn_t *sc)
                 return NGX_ERROR;
             }
 
-            ngx_log_debug3(NGX_LOG_DEBUG_HTTP, sc->srt_pool->log, 0,
+            ngx_log_debug3(NGX_LOG_DEBUG_SRT, sc->srt_pool->log, 0,
                 "ngx_srt_conn_send: srt send %d, fd: %D, size: %uz",
                 n, ss, size);
 
@@ -905,7 +905,7 @@ ngx_srt_conn_write_handler(ngx_srt_conn_t *sc)
         break;
 
     case SRTS_CONNECTING:
-        ngx_log_debug1(NGX_LOG_DEBUG_EVENT, sc->srt_pool->log, 0,
+        ngx_log_debug1(NGX_LOG_DEBUG_SRT, sc->srt_pool->log, 0,
             "ngx_srt_conn_write_handler: socket %D connecting", ss);
         return;
 
@@ -1498,7 +1498,7 @@ ngx_srt_conn_finalize(ngx_srt_conn_t *sc, ngx_uint_t rc)
     ngx_srt_stream_t  *st;
     ngx_connection_t  *pc;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_STREAM, sc->connection->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_SRT, sc->connection->log, 0,
         "ngx_srt_conn_finalize: finalize srt conn: %i", rc);
 
     sc->status = rc;
@@ -1511,7 +1511,7 @@ ngx_srt_conn_finalize(ngx_srt_conn_t *sc, ngx_uint_t rc)
     st = sc->stream;
     if (st && st->close_conn) {
         pc = st->connection;
-        ngx_log_debug1(NGX_LOG_DEBUG_STREAM, sc->connection->log, 0,
+        ngx_log_debug1(NGX_LOG_DEBUG_SRT, sc->connection->log, 0,
             "ngx_srt_conn_finalize: close srt stream connection: %d", pc->fd);
 
         ngx_close_connection(pc);
@@ -1576,7 +1576,7 @@ ngx_srt_conn_terminate(ngx_srt_conn_t *sc)
     st = sc->stream;
     if (st && st->close_conn) {
         pc = st->connection;
-        ngx_log_debug1(NGX_LOG_DEBUG_STREAM, sc->connection->log, 0,
+        ngx_log_debug1(NGX_LOG_DEBUG_SRT, sc->connection->log, 0,
             "ngx_srt_conn_terminate: close srt stream connection: %d",
             pc->fd);
 
@@ -2157,7 +2157,7 @@ ngx_srt_thread_cycle(void *data)
 
     cycle = data;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_CORE, ngx_cycle->log, 0,
+    ngx_log_debug0(NGX_LOG_DEBUG_SRT, ngx_cycle->log, 0,
         "ngx_srt_thread_cycle: thread started");
 
     if (ngx_srt_thread_init(cycle) != NGX_OK) {
@@ -2174,7 +2174,7 @@ ngx_srt_thread_cycle(void *data)
         }
     }
 
-    ngx_log_debug0(NGX_LOG_DEBUG_CORE, ngx_cycle->log, 0,
+    ngx_log_debug0(NGX_LOG_DEBUG_SRT, ngx_cycle->log, 0,
         "ngx_srt_thread_cycle: thread done");
 
 done:
@@ -2290,7 +2290,7 @@ ngx_srt_exit_worker(ngx_cycle_t *cycle)
         }
 
         if (*ngx_srt_threads <= 0) {
-            ngx_log_debug0(NGX_LOG_DEBUG_CORE, cycle->log, 0,
+            ngx_log_debug0(NGX_LOG_DEBUG_SRT, cycle->log, 0,
                 "ngx_srt_exit_worker: all threads finished");
             break;
         }
