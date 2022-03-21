@@ -36,7 +36,7 @@ SRT_CORE_SRCS="$ngx_addon_dir/src/ngx_srt.c                     \
                $ngx_addon_dir/src/ngx_srt_core_module.c         \
                $ngx_addon_dir/src/ngx_srt_log_module.c          \
                $ngx_addon_dir/src/ngx_srt_map_module.c          \
-               $ngx_addon_dir/src/ngx_srt_utils_module.c        \
+               $ngx_addon_dir/src/ngx_srt_set_misc_module.c     \
                $ngx_addon_dir/src/ngx_srt_proxy_module.c        \
                $ngx_addon_dir/src/ngx_srt_script.c              \
                $ngx_addon_dir/src/ngx_srt_stream.c              \
@@ -53,7 +53,7 @@ SRT_CORE_MODS="ngx_srt_module                                   \
                ngx_srt_core_module                              \
                ngx_srt_log_module                               \
                ngx_srt_map_module                               \
-               ngx_srt_utils_module                             \
+               ngx_srt_set_misc_module                          \
                ngx_srt_proxy_module                             \
                ngx_srt_upstream_module                          \
                ngx_srt_write_filter_module                      \
