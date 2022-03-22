@@ -104,8 +104,8 @@ ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst, ngx_str_t *src,
                 "ngx_srt_set_misc_base64_decode: ngx_decode_base64url failed");
             return NGX_ERROR;
         }
-    }
-    else {
+
+    } else {
         if (ngx_decode_base64(dst, src) != NGX_OK) {
            ngx_log_error(NGX_LOG_ERR, pool->log, 0,
                 "ngx_srt_set_misc_base64_decode: ngx_decode_base64 failed");
