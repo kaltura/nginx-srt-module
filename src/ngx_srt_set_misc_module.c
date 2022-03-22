@@ -1,14 +1,14 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
-
-#include <openssl/evp.h>
-
 #include "ngx_srt.h"
 
+#if (NGX_HAVE_OPENSSL_EVP)
+#include <openssl/evp.h>
 
-typedef struct {
-    ngx_srt_complex_value_t  value;
-} ngx_srt_set_misc_base64_ctx_t;
+
+#define NGX_SRT_SET_MISC_CRYPT_KEY_LEN  (256 / 8)
+#define NGX_SRT_SET_MISC_CRYPT_IV_LEN   EVP_MAX_IV_LENGTH
+
 
 typedef struct {
     ngx_str_t                key;
@@ -16,14 +16,17 @@ typedef struct {
     ngx_srt_complex_value_t  value;
 } ngx_srt_set_misc_crypt_ctx_t;
 
-enum {
-    ngx_encrypt_key_length = 256 / 8,
-    ngx_encrypt_iv_length = EVP_MAX_IV_LENGTH
-};
-
 
 static char *ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf);
+#endif
+
+
+typedef struct {
+    ngx_srt_complex_value_t  value;
+} ngx_srt_set_misc_base64_ctx_t;
+
+
 static char *ngx_srt_set_misc_base64(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf);
 
@@ -37,12 +40,14 @@ static ngx_command_t  ngx_srt_set_misc_commands[] = {
       0,
       NULL },
 
+#if (NGX_HAVE_OPENSSL_EVP)
     { ngx_string("set_aes_decrypt"),
       NGX_SRT_MAIN_CONF|NGX_CONF_TAKE4,
       ngx_srt_set_misc_decrypt,
       NGX_SRT_MAIN_CONF_OFFSET,
       0,
       NULL },
+#endif
 
       ngx_null_command
 };
@@ -174,6 +179,7 @@ ngx_srt_set_misc_base64(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 }
 
 
+#if (NGX_HAVE_OPENSSL_EVP)
 static ngx_int_t
 ngx_srt_set_misc_decrypt_aes(ngx_pool_t *pool, ngx_str_t *key, ngx_str_t *iv,
     ngx_str_t *input, ngx_str_t *dst)
@@ -300,8 +306,8 @@ ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
 
-    if (decrypt->key.len != ngx_encrypt_key_length ||
-        decrypt->iv.len != ngx_encrypt_iv_length)
+    if (decrypt->key.len != NGX_SRT_SET_MISC_CRYPT_KEY_LEN ||
+        decrypt->iv.len != NGX_SRT_SET_MISC_CRYPT_IV_LEN)
     {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
             "ngx_srt_set_misc_decrypt: key length or iv length is not correct");
@@ -339,3 +345,4 @@ ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     return NGX_CONF_OK;
 }
+#endif

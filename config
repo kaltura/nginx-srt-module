@@ -21,6 +21,36 @@ fi
 ngx_module_libs="$ngx_module_libs $ngx_feature_libs"
 
 
+# openssl evp
+#
+if [ $OPENSSL = NONE ]; then
+    LIB_CRYPTO=${LIB_CRYPTO:--lcrypto}
+    LIB_PTHREAD=${LIB_PTHREAD:--lpthread}
+
+    ngx_feature="OpenSSL EVP library"
+    ngx_feature_name="NGX_HAVE_OPENSSL_EVP"
+    ngx_feature_run=no
+    ngx_feature_incs="#include <openssl/evp.h>"
+    ngx_feature_path=
+    ngx_feature_libs="$LIB_CRYPTO $NGX_LIBDL $LIB_PTHREAD"
+    ngx_feature_test="EVP_CIPHER_CTX_new();"
+    . auto/feature
+
+    if [ $ngx_found = yes ]; then
+        ngx_module_libs="$ngx_module_libs $ngx_feature_libs"
+    fi
+else
+    ngx_found=yes
+    cat << END >> $NGX_AUTO_CONFIG_H
+
+#ifndef NGX_HAVE_OPENSSL_EVP
+#define NGX_HAVE_OPENSSL_EVP  1
+#endif
+
+END
+fi
+
+
 # sources
 #
 SRT_CORE_DEPS="$ngx_addon_dir/src/ngx_srt.h                     \
