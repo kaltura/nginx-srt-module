@@ -24,6 +24,7 @@ static char *ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd,
 
 typedef struct {
     ngx_srt_complex_value_t  value;
+    unsigned                 url_safe:1;
 } ngx_srt_set_misc_base64_ctx_t;
 
 
@@ -38,7 +39,14 @@ static ngx_command_t  ngx_srt_set_misc_commands[] = {
       ngx_srt_set_misc_base64,
       NGX_SRT_MAIN_CONF_OFFSET,
       0,
-      NULL },
+      (void *) 0 },
+
+    { ngx_string("set_decode_base64url"),
+      NGX_SRT_MAIN_CONF|NGX_CONF_TAKE2,
+      ngx_srt_set_misc_base64,
+      NGX_SRT_MAIN_CONF_OFFSET,
+      0,
+      (void *) 1 },
 
 #if (NGX_HAVE_OPENSSL_EVP)
     { ngx_string("set_aes_decrypt"),
@@ -80,7 +88,7 @@ ngx_module_t  ngx_srt_set_misc_module = {
 
 
 static ngx_int_t
-ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst, ngx_str_t *src)
+ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst, ngx_str_t *src, unsigned url_safe)
 {
     dst->data = ngx_pnalloc(pool, ngx_base64_decoded_length(src->len));
     if (dst->data == NULL) {
@@ -89,7 +97,7 @@ ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst, ngx_str_t *src)
         return NGX_ERROR;
     }
 
-    if (ngx_decode_base64(dst, src) != NGX_OK) {
+    if (url_safe ? ngx_decode_base64url(dst, src) : ngx_decode_base64(dst, src) != NGX_OK) {
         ngx_log_error(NGX_LOG_ERR, pool->log, 0,
             "ngx_srt_set_misc_base64_decode: ngx_decode_base64 failed");
         return NGX_ERROR;
@@ -116,7 +124,7 @@ ngx_srt_set_misc_base64_variable(ngx_srt_session_t *s,
         return NGX_ERROR;
     }
 
-    if (ngx_srt_set_misc_base64_decode(s->connection->pool, &decode_str, &val)
+    if (ngx_srt_set_misc_base64_decode(s->connection->pool, &decode_str, &val, base64->url_safe)
         != NGX_OK)
     {
         return NGX_ERROR;
@@ -142,6 +150,10 @@ ngx_srt_set_misc_base64(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     base64 = ngx_pcalloc(cf->pool, sizeof(ngx_srt_set_misc_base64_ctx_t));
     if (base64 == NULL) {
         return NGX_CONF_ERROR;
+    }
+
+    if ((uintptr_t) cmd->post) {
+        base64->url_safe = 1;
     }
 
     value = cf->args->elts;
@@ -290,7 +302,7 @@ ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     value = cf->args->elts;
 
-    if (ngx_srt_set_misc_base64_decode(cf->pool, &decrypt->key, &value[2])
+    if (ngx_srt_set_misc_base64_decode(cf->pool, &decrypt->key, &value[2], 0)
         != NGX_OK)
     {
        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
@@ -298,7 +310,7 @@ ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
 
-    if (ngx_srt_set_misc_base64_decode(cf->pool, &decrypt->iv, &value[3])
+    if (ngx_srt_set_misc_base64_decode(cf->pool, &decrypt->iv, &value[3], 0)
         != NGX_OK)
     {
        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
