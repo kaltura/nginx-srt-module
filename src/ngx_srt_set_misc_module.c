@@ -98,7 +98,6 @@ ngx_srt_set_misc_base64_variable(ngx_srt_session_t *s,
     ngx_srt_variable_value_t *v, uintptr_t data)
 {
     ngx_str_t                       val, decode_str;
-    ngx_log_t                      *log;
     ngx_srt_set_misc_base64_ctx_t  *base64;
 
     base64 = (ngx_srt_set_misc_base64_ctx_t *) data;
