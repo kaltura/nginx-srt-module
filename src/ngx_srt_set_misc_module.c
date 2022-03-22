@@ -102,13 +102,12 @@ ngx_srt_set_misc_base64_variable(ngx_srt_session_t *s,
     ngx_srt_set_misc_base64_ctx_t  *base64;
 
     base64 = (ngx_srt_set_misc_base64_ctx_t *) data;
-    log = s->connection->log;
 
     ngx_log_debug0(NGX_LOG_DEBUG_SRT, log, 0,
         "srt base64 started");
 
     if (ngx_srt_complex_value(s, &base64->value, &val) != NGX_OK) {
-        ngx_log_error(NGX_LOG_NOTICE, log, 0,
+        ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
             "ngx_srt_set_misc_base64_variable: failed to eval complex value");
         return NGX_ERROR;
     }
@@ -258,8 +257,7 @@ ngx_srt_set_misc_decrypt_variable(ngx_srt_session_t *s,
         &decrypt->iv, &val, &decrypt_str) != NGX_OK)
     {
         ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-            "ngx_srt_set_misc_decrypt_variable:"
-            "failed to ngx_srt_set_misc_decrypt_aes");
+            "ngx_srt_set_misc_decrypt_variable: decrypt failed");
         return NGX_ERROR;
     }
 
@@ -304,7 +302,7 @@ ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     }
 
     if (decrypt->key.len != ngx_encrypt_key_length ||
-        decrypt->iv.len < ngx_encrypt_iv_length)
+        decrypt->iv.len != ngx_encrypt_iv_length)
     {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
             "ngx_srt_set_misc_decrypt: key length or iv length is not correct");
