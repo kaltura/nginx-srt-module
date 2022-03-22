@@ -88,7 +88,8 @@ ngx_module_t  ngx_srt_set_misc_module = {
 
 
 static ngx_int_t
-ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst, ngx_str_t *src, unsigned url_safe)
+ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst, ngx_str_t *src,
+    unsigned url_safe)
 {
     dst->data = ngx_pnalloc(pool, ngx_base64_decoded_length(src->len));
     if (dst->data == NULL) {
@@ -97,10 +98,18 @@ ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst, ngx_str_t *src,
         return NGX_ERROR;
     }
 
-    if (url_safe ? ngx_decode_base64url(dst, src) : ngx_decode_base64(dst, src) != NGX_OK) {
-        ngx_log_error(NGX_LOG_ERR, pool->log, 0,
-            "ngx_srt_set_misc_base64_decode: ngx_decode_base64 failed");
-        return NGX_ERROR;
+    if (url_safe) {
+        if (ngx_decode_base64url(dst, src) != NGX_OK) {
+            ngx_log_error(NGX_LOG_ERR, pool->log, 0,
+                "ngx_srt_set_misc_base64_decode: ngx_decode_base64url failed");
+            return NGX_ERROR;
+        }
+    } else {
+        if (ngx_decode_base64(dst, src) != NGX_OK) {
+           ngx_log_error(NGX_LOG_ERR, pool->log, 0,
+                "ngx_srt_set_misc_base64_decode: ngx_decode_base64 failed");
+            return NGX_ERROR;
+        }
     }
 
     return NGX_OK;
@@ -124,8 +133,8 @@ ngx_srt_set_misc_base64_variable(ngx_srt_session_t *s,
         return NGX_ERROR;
     }
 
-    if (ngx_srt_set_misc_base64_decode(s->connection->pool, &decode_str, &val, base64->url_safe)
-        != NGX_OK)
+    if (ngx_srt_set_misc_base64_decode(s->connection->pool, &decode_str, &val,
+        base64->url_safe) != NGX_OK)
     {
         return NGX_ERROR;
     }
@@ -152,10 +161,7 @@ ngx_srt_set_misc_base64(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
 
-    if ((uintptr_t) cmd->post) {
-        base64->url_safe = 1;
-    }
-
+    base64->url_safe = (uintptr_t) cmd->post;
     value = cf->args->elts;
 
     ngx_memzero(&ccv, sizeof(ngx_srt_compile_complex_value_t));
