@@ -102,7 +102,7 @@ ngx_srt_set_misc_base64_variable(ngx_srt_session_t *s,
 
     base64 = (ngx_srt_set_misc_base64_ctx_t *) data;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_SRT, log, 0,
+    ngx_log_debug0(NGX_LOG_DEBUG_SRT, s->connection->log, 0,
         "srt base64 started");
 
     if (ngx_srt_complex_value(s, &base64->value, &val) != NGX_OK) {
