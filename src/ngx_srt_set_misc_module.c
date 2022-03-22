@@ -77,13 +77,13 @@ ngx_module_t  ngx_srt_set_misc_module = {
 static ngx_int_t
 ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst, ngx_str_t *src)
 {
-    dst->len = ngx_base64_decoded_length(src->len);
-    dst->data = ngx_pnalloc(pool, dst->len);
+    dst->data = ngx_pnalloc(pool, ngx_base64_decoded_length(src->len));
     if (dst->data == NULL) {
         ngx_log_error(NGX_LOG_NOTICE, pool->log, 0,
             "ngx_srt_set_misc_base64_decode: alloc failed");
         return NGX_ERROR;
     }
+
     if (ngx_decode_base64(dst, src) != NGX_OK) {
         ngx_log_error(NGX_LOG_ERR, pool->log, 0,
             "ngx_srt_set_misc_base64_decode: ngx_decode_base64 failed");
@@ -116,8 +116,6 @@ ngx_srt_set_misc_base64_variable(ngx_srt_session_t *s,
     if (ngx_srt_set_misc_base64_decode(s->connection->pool, &decode_str, &val)
         != NGX_OK)
     {
-       ngx_log_error(NGX_LOG_NOTICE, log, 0,
-            "ngx_srt_set_misc_base64_variable: alloc failed");
         return NGX_ERROR;
     }
 
@@ -190,8 +188,7 @@ ngx_srt_set_misc_decrypt_aes(ngx_pool_t *pool, ngx_str_t *key, ngx_str_t *iv,
     cipher = EVP_aes_256_cbc();
     block_size = EVP_CIPHER_block_size(cipher);
 
-    dst->len = input->len + block_size;
-    dst->data = ngx_pnalloc(pool, dst->len);
+    dst->data = ngx_pnalloc(pool, input->len + block_size);
     if (dst->data == NULL) {
         ngx_log_error(NGX_LOG_NOTICE, pool->log, 0,
             "ngx_srt_set_misc_decrypt_aes: alloc failed");
@@ -211,7 +208,6 @@ ngx_srt_set_misc_decrypt_aes(ngx_pool_t *pool, ngx_str_t *key, ngx_str_t *iv,
         goto failed;
     }
 
-    dst_len = dst->len;
     if (!EVP_DecryptUpdate(ctx, dst->data,
         &dst_len, input->data, input->len))
     {
@@ -221,6 +217,7 @@ ngx_srt_set_misc_decrypt_aes(ngx_pool_t *pool, ngx_str_t *key, ngx_str_t *iv,
     }
 
     dst->len = dst_len;
+
     if (!EVP_DecryptFinal_ex(ctx, dst->data + dst->len, &dst_len)) {
         ngx_log_error(NGX_LOG_ERR, pool->log, 0,
             "ngx_srt_set_misc_decrypt_aes: EVP_DecryptFinal_ex failed");
@@ -253,14 +250,14 @@ ngx_srt_set_misc_decrypt_variable(ngx_srt_session_t *s,
 
     if (ngx_srt_complex_value(s, &decrypt->value, &val) != NGX_OK) {
         ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-        "ngx_srt_set_misc_decrypt_variable: failed to eval complex value");
+            "ngx_srt_set_misc_decrypt_variable: failed to eval complex value");
         return NGX_ERROR;
     }
 
     if (ngx_srt_set_misc_decrypt_aes(s->connection->pool, &decrypt->key,
         &decrypt->iv, &val, &decrypt_str) != NGX_OK)
     {
-        ngx_log_error(NGX_LOG_NOTICE    , s->connection->log, 0,
+        ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
             "ngx_srt_set_misc_decrypt_variable:"
             "failed to ngx_srt_set_misc_decrypt_aes");
         return NGX_ERROR;
@@ -309,8 +306,8 @@ ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (decrypt->key.len != ngx_encrypt_key_length ||
         decrypt->iv.len < ngx_encrypt_iv_length)
     {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "ngx_srt_set_misc_decrypt:"
-            "key length and iv length is not correct");
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+            "ngx_srt_set_misc_decrypt: key length or iv length is not correct");
         return NGX_CONF_ERROR;
     }
 
