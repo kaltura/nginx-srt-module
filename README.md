@@ -299,7 +299,7 @@ Performs url-safe-base64 decode of the value of the second argument, and assigns
 
 Performs AES-256-CBC decryption of the value of the last argument, using the supplied key/iv, and assigns the result to the variable specified in the first argument.
 
-### stream proxy directives
+### stream srt proxy directives
 
 #### srt_proxy_pass
 * **syntax**: `srt_proxy_pass address;`
@@ -347,6 +347,18 @@ The parameter value can contain variables.
 Sets a passphrase for encryption, see the libsrt documentation of the `SRTO_PASSPHRASE` option for more details.
 
 The parameter value can contain variables.
+
+### stream preread str directives
+
+#### preread_str_delim
+* **syntax**: `preread_str_delim delim;`
+* **default**: ``
+* **context**: `stream, server`
+
+Consumes data from the incoming connection up to the provided delimiter.
+The consumed data is not seen by any content phase handlers (for example, `srt_proxy_pass` will not proxy it),
+but can be accessed using the `$preread_str` variable.
+If the delimiter is not found after reading `preread_buffer_size` bytes (defined in nginx stream core), the connection is dropped.
 
 ## Embedded Variables
 
