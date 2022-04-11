@@ -119,6 +119,7 @@ ngx_stream_srt_proxy_handler(ngx_stream_session_t *s)
     u_char                           *p;
     ngx_str_t                         stream_id;
     ngx_str_t                         passphrase;
+    ngx_chain_t                      *cl;
     ngx_srt_conn_t                   *sc;
     ngx_connection_t                 *c, *pc;
     ngx_srt_stream_t                 *st;
@@ -133,8 +134,6 @@ ngx_stream_srt_proxy_handler(ngx_stream_session_t *s)
 
     ngx_log_debug0(NGX_LOG_DEBUG_STREAM, c->log, 0,
         "ngx_stream_srt_proxy_handler: called");
-
-    pscf = ngx_stream_get_module_srv_conf(s, ngx_stream_srt_proxy_module);
 
     if (pscf->stream_id) {
         if (ngx_stream_complex_value(s, pscf->stream_id, &stream_id)
@@ -195,6 +194,29 @@ ngx_stream_srt_proxy_handler(ngx_stream_session_t *s)
     st->connected = 1;
 
     sc->stream = st;
+
+    if (c->buffer && c->buffer->pos < c->buffer->last) {
+        ngx_log_debug1(NGX_LOG_DEBUG_STREAM, c->log, 0,
+            "stream srt proxy add preread buffer: %uz",
+            c->buffer->last - c->buffer->pos);
+
+        cl = ngx_chain_get_free_buf(c->pool, &st->free);
+        if (cl == NULL) {
+            ngx_srt_conn_finalize(sc, NGX_STREAM_INTERNAL_SERVER_ERROR);
+            return;
+        }
+
+        *cl->buf = *c->buffer;
+
+        cl->buf->tag = (ngx_buf_tag_t) &ngx_srt_module;
+        cl->buf->temporary = 1;
+        cl->buf->flush = 1;
+
+        cl->next = st->out;
+        st->out = cl;
+
+        st->received += cl->buf->last - cl->buf->pos;
+    }
 
     u = ngx_pcalloc(c->pool, sizeof(ngx_stream_srt_proxy_upstream_t));
     if (u == NULL) {
