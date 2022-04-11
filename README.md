@@ -175,6 +175,31 @@ The parameter value can contain variables.
 
 Sets the size of the buffer used for reading data from the client.
 
+### srt map directives
+
+#### map
+* **syntax**: `map string $variable { ... }`
+* **default**: ``
+* **context**: `srt`
+
+Creates a new variable whose value depends on values of one or more of the source variables specified in the first parameter.
+
+See the documentation of the `map` directive of the nginx `stream` module for more details.
+
+#### map_hash_max_size
+* **syntax**: `map_hash_max_size size;`
+* **default**: `2048`
+* **context**: `srt`
+
+Sets the maximum size of the map variables hash table.
+
+#### map_hash_bucket_size
+* **syntax**: `map_hash_bucket_size size;`
+* **default**: `32|64|128`
+* **context**: `srt`
+
+Sets the bucket size for the map variables hash table.
+
 ### srt log directives
 
 #### access_log
@@ -250,6 +275,29 @@ Enables the PROXY protocol for connections to a proxied server.
 Defines a string that is sent to the proxied server before any data received over SRT.
 
 The parameter value can contain variables.
+
+### srt set misc directives
+
+#### set_decode_base64
+* **syntax**: `set_decode_base64 $dst src;`
+* **default**: ``
+* **context**: `srt`
+
+Performs base64 decode of the value of the second argument, and assigns the result to the variable specified in the first argument.
+
+#### set_decode_base64url
+* **syntax**: `set_decode_base64url $dst src;`
+* **default**: ``
+* **context**: `srt`
+
+Performs url-safe-base64 decode of the value of the second argument, and assigns the result to the variable specified in the first argument.
+
+#### set_aes_decrypt
+* **syntax**: `set_aes_decrypt $dst base64_key base64_iv src;`
+* **default**: ``
+* **context**: `srt`
+
+Performs AES-256-CBC decryption of the value of the last argument, using the supplied key/iv, and assigns the result to the variable specified in the first argument.
 
 ### stream proxy directives
 
