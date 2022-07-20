@@ -60,6 +60,7 @@ static ngx_command_t  ngx_srt_set_misc_commands[] = {
       ngx_null_command
 };
 
+
 static ngx_srt_module_t  ngx_srt_set_misc_module_ctx = {
     NULL,                                  /* preconfiguration */
     NULL,                                  /* postconfiguration */
@@ -70,6 +71,7 @@ static ngx_srt_module_t  ngx_srt_set_misc_module_ctx = {
     NULL,                                  /* create server configuration */
     NULL                                   /* merge server configuration */
 };
+
 
 ngx_module_t  ngx_srt_set_misc_module = {
     NGX_MODULE_V1,
@@ -107,7 +109,7 @@ ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst, ngx_str_t *src,
 
     } else {
         if (ngx_decode_base64(dst, src) != NGX_OK) {
-           ngx_log_error(NGX_LOG_ERR, pool->log, 0,
+            ngx_log_error(NGX_LOG_ERR, pool->log, 0,
                 "ngx_srt_set_misc_base64_decode: ngx_decode_base64 failed");
             return NGX_ERROR;
         }
@@ -115,6 +117,7 @@ ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst, ngx_str_t *src,
 
     return NGX_OK;
 }
+
 
 static ngx_int_t
 ngx_srt_set_misc_base64_variable(ngx_srt_session_t *s,
@@ -148,6 +151,7 @@ ngx_srt_set_misc_base64_variable(ngx_srt_session_t *s,
 
     return NGX_OK;
 }
+
 
 static char *
 ngx_srt_set_misc_base64(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
@@ -254,10 +258,12 @@ ngx_srt_set_misc_decrypt_aes(ngx_pool_t *pool, ngx_str_t *key, ngx_str_t *iv,
     return NGX_OK;
 
 failed:
+
     EVP_CIPHER_CTX_cleanup(ctx);
 
     return NGX_ERROR;
 }
+
 
 static ngx_int_t
 ngx_srt_set_misc_decrypt_variable(ngx_srt_session_t *s,
@@ -294,6 +300,7 @@ ngx_srt_set_misc_decrypt_variable(ngx_srt_session_t *s,
     return NGX_OK;
 }
 
+
 static char *
 ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -312,7 +319,7 @@ ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (ngx_srt_set_misc_base64_decode(cf->pool, &decrypt->key, &value[2], 0)
         != NGX_OK)
     {
-       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
             "ngx_srt_set_misc_decrypt: base64_decode key failed");
         return NGX_CONF_ERROR;
     }
@@ -320,7 +327,7 @@ ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (ngx_srt_set_misc_base64_decode(cf->pool, &decrypt->iv, &value[3], 0)
         != NGX_OK)
     {
-       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
             "ngx_srt_set_misc_decrypt: base64_decode iv failed");
         return NGX_CONF_ERROR;
     }

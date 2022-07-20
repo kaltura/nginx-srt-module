@@ -461,7 +461,7 @@ ngx_srt_get_variable(ngx_srt_session_t *s, ngx_str_t *name,
 
 static ngx_int_t
 ngx_srt_variable_binary_remote_addr(ngx_srt_session_t *s,
-     ngx_srt_variable_value_t *v, uintptr_t data)
+    ngx_srt_variable_value_t *v, uintptr_t data)
 {
     struct sockaddr_in   *sin;
 #if (NGX_HAVE_INET6)

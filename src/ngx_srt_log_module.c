@@ -372,6 +372,7 @@ ngx_srt_log_write(ngx_srt_session_t *s, ngx_srt_log_t *log,
         if (buffer && buffer->gzip) {
             n = ngx_srt_log_gzip(log->file->fd, buf, len, buffer->gzip,
                                     s->connection->log);
+
         } else {
             n = ngx_write_fd(log->file->fd, buf, len);
         }
@@ -627,6 +628,7 @@ ngx_srt_log_flush(ngx_open_file_t *file, ngx_log_t *log)
     if (buffer->gzip) {
         n = ngx_srt_log_gzip(file->fd, buffer->start, len, buffer->gzip,
                                 log);
+
     } else {
         n = ngx_write_fd(file->fd, buffer->start, len);
     }
@@ -802,6 +804,7 @@ ngx_srt_log_escape(u_char *dst, u_char *src, size_t size)
             if (escape[*src >> 5] & (1U << (*src & 0x1f))) {
                 n++;
             }
+
             src++;
             size--;
         }
@@ -820,6 +823,7 @@ ngx_srt_log_escape(u_char *dst, u_char *src, size_t size)
         } else {
             *dst++ = *src++;
         }
+
         size--;
     }
 
@@ -888,7 +892,7 @@ ngx_srt_log_unescaped_variable_getlen(ngx_srt_session_t *s,
 
 static u_char *
 ngx_srt_log_unescaped_variable(ngx_srt_session_t *s, u_char *buf,
-                                  ngx_srt_log_op_t *op)
+    ngx_srt_log_op_t *op)
 {
     ngx_srt_variable_value_t  *value;
 
