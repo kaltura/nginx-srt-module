@@ -19,7 +19,7 @@
 
 
 #ifndef ngx_rbtree_data
-#define ngx_rbtree_data(node, type, link)                                     \
+#define ngx_rbtree_data(node, type, link)                                    \
     (type *) ((u_char *) (node) - offsetof(type, link))
 #endif
 
@@ -271,6 +271,7 @@ ngx_srt_conn_post_srt(ngx_srt_conn_t *sc, uint32_t flags)
         ngx_srt_srt_posted = sc;
 
         notify = 1;
+
     } else {
         notify = 0;
     }

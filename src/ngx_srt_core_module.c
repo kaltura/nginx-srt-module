@@ -266,6 +266,7 @@ ngx_srt_core_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
     if (conf->error_log == NULL) {
         if (prev->error_log) {
             conf->error_log = prev->error_log;
+
         } else {
             conf->error_log = &cf->cycle->new_log;
         }

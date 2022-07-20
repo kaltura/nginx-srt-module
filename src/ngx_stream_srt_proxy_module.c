@@ -516,6 +516,7 @@ ngx_stream_srt_proxy_log_session(void *data)
     }
 }
 
+
 static void
 ngx_stream_srt_proxy_cleanup(void *data)
 {
