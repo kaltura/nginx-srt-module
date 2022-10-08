@@ -77,7 +77,6 @@ SRT_CORE_SRCS="$ngx_addon_dir/src/ngx_srt.c                       \
 
 SRT_STREAM_SRCS="                                                 \
                $ngx_addon_dir/src/ngx_stream_srt_proxy_module.c   \
-               $ngx_addon_dir/src/ngx_stream_preread_str_module.c \
                "
 
 SRT_CORE_MODS="ngx_srt_module                                     \
@@ -92,7 +91,6 @@ SRT_CORE_MODS="ngx_srt_module                                     \
 
 SRT_STREAM_MODULES="                                              \
                ngx_stream_srt_proxy_module                        \
-               ngx_stream_preread_str_module                      \
                "
 
 if [ -n "$ngx_module_link" ]; then
