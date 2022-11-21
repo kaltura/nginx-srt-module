@@ -10,11 +10,11 @@ ngx_feature_run=no
 ngx_feature_incs="#include <srt/srt.h>"
 ngx_feature_path=
 ngx_feature_libs="-lsrt"
-ngx_feature_test="srt_startup();"
+ngx_feature_test="srt_bind_acquire(0, 0);"
 . auto/feature
 
 if [ $ngx_found = no ]; then
-    echo "error: srt not found." 1>&2
+    echo "error: libsrt not found, version v1.4.2 or newer is required." 1>&2
     exit 1
 fi
 
