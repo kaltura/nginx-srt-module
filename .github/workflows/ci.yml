@@ -11,7 +11,7 @@ env:
 jobs:
   build-and-test:
     name: Build and Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -33,7 +33,7 @@ jobs:
             libpcre3-dev \
             libxml2-dev \
             wget \
-            libsrt-dev \
+            libsrt-openssl-dev \
             unzip 
       - name : Build
         run: ./ci_build.sh ${{ matrix.confargs }}
