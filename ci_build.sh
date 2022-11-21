@@ -51,6 +51,6 @@ cd nginx
         --with-debug \
         --with-threads \
 	--with-stream \
-        --with-cc-opt="-O3 -mpopcnt" \
+        --with-cc-opt="-O3" \
         $*
 make -j $(nproc)
