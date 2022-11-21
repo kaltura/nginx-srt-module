@@ -33,7 +33,7 @@ jobs:
             libpcre3-dev \
             libxml2-dev \
             wget \
-            libsrt-openssl-dev \
+            libsrt-dev \
             unzip 
       - name : Build
         run: ./ci_build.sh ${{ matrix.confargs }}
