@@ -9,7 +9,7 @@ with the main nginx thread.
 
 ## Build
 
-![Build Status](actions/workflows/ci.yml/badge.svg)
+![Build Status](https://github.com/kaltura/nginx-srt-module/actions/workflows/ci.yml/badge.svg)
 
 To link statically against nginx, cd to nginx source directory and execute:
 
