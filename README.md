@@ -9,6 +9,8 @@ with the main nginx thread.
 
 ## Build
 
+![Build Status](actions/workflows/ci.yml/badge.svg)
+
 To link statically against nginx, cd to nginx source directory and execute:
 
     ./configure --add-module=/path/to/nginx-srt-module --with-stream --with-threads
