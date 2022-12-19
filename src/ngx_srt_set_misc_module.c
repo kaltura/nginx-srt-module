@@ -90,8 +90,8 @@ ngx_module_t  ngx_srt_set_misc_module = {
 
 
 static ngx_int_t
-ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst, ngx_str_t *src,
-    ngx_flag_t url_safe)
+ngx_srt_set_misc_base64_decode(ngx_pool_t *pool, ngx_str_t *dst,
+    ngx_str_t *src, ngx_flag_t url_safe)
 {
     dst->data = ngx_pnalloc(pool, ngx_base64_decoded_length(src->len));
     if (dst->data == NULL) {
@@ -283,11 +283,17 @@ ngx_srt_set_misc_decrypt_variable(ngx_srt_session_t *s,
         return NGX_ERROR;
     }
 
+    if (val.len <= 0) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
     if (ngx_srt_set_misc_decrypt_aes(s->connection->pool, &decrypt->key,
         &decrypt->iv, &val, &decrypt_str) != NGX_OK)
     {
         ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-            "ngx_srt_set_misc_decrypt_variable: decrypt failed");
+            "ngx_srt_set_misc_decrypt_variable: "
+            "decrypt failed, val=\"%V\"", &val);
         return NGX_ERROR;
     }
 
@@ -336,7 +342,8 @@ ngx_srt_set_misc_decrypt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         decrypt->iv.len != NGX_SRT_SET_MISC_CRYPT_IV_LEN)
     {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-            "ngx_srt_set_misc_decrypt: key length or iv length is not correct");
+            "ngx_srt_set_misc_decrypt: "
+            "key length or iv length is not correct");
         return NGX_CONF_ERROR;
     }
 
