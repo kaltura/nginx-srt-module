@@ -295,7 +295,7 @@ Performs base64 decode of the value of the second argument, and assigns the resu
 Performs url-safe-base64 decode of the value of the second argument, and assigns the result to the variable specified in the first argument.
 
 #### set_aes_decrypt
-* **syntax**: `set_aes_decrypt $dst key iv src;`
+* **syntax**: `set_aes_decrypt $dst base64_key base64_iv src;`
 * **default**: ``
 * **context**: `srt`
 
