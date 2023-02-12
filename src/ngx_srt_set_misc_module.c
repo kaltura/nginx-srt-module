@@ -326,7 +326,7 @@ ngx_srt_set_misc_decrypt_variable(ngx_srt_session_t *s,
 
     if (ngx_srt_complex_value(s, &decrypt->value, &val) != NGX_OK) {
         ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-            "ngx_srt_set_misc_decrypt_variable: failed to eval val");
+            "ngx_srt_set_misc_decrypt_variable: failed to eval complex value");
         return NGX_ERROR;
     }
 
