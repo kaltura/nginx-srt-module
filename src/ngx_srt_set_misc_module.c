@@ -264,53 +264,24 @@ failed:
     return NGX_ERROR;
 }
 
-static ngx_int_t
-ngx_srt_misc_decode_validate_key_iv(ngx_srt_session_t *s,
-    ngx_srt_set_misc_crypt_ctx_t *decrypt, ngx_str_t *key, ngx_str_t *iv,
-    ngx_str_t *val)
+
+ngx_int_t
+ngx_srt_complex_value_base64(ngx_srt_session_t *s, ngx_srt_complex_value_t *val,
+    ngx_str_t *dst)
 {
-    ngx_str_t base64_key, base64_iv;
+    ngx_str_t value;
 
-    if (ngx_srt_complex_value(s, &decrypt->key, &base64_key) != NGX_OK) {
+    if (ngx_srt_complex_value(s, val, &value) != NGX_OK) {
         ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-            "ngx_srt_misc_decode_validate_key_iv: failed to eval key");
+            "ngx_srt_complex_value_base64: failed to eval complex value");
         return NGX_ERROR;
     }
 
-    if (ngx_srt_complex_value(s, &decrypt->iv, &base64_iv) != NGX_OK) {
-        ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-            "ngx_srt_misc_decode_validate_key_iv: failed to eval iv");
-        return NGX_ERROR;
-    }
-
-    if (ngx_srt_complex_value(s, &decrypt->value, val) != NGX_OK) {
-        ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-            "ngx_srt_misc_decode_validate_key_iv: failed to eval val");
-        return NGX_ERROR;
-    }
-
-    if (ngx_srt_set_misc_base64_decode(s->connection->pool, key, &base64_key, 0)
+    if (ngx_srt_set_misc_base64_decode(s->connection->pool, dst, &value, 0)
         != NGX_OK)
     {
         ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-            "ngx_srt_misc_decode_validate_key_iv: base64_decode key failed");
-        return NGX_ERROR;
-    }
-
-    if (ngx_srt_set_misc_base64_decode(s->connection->pool, iv, &base64_iv, 0)
-        != NGX_OK)
-    {
-        ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-            "ngx_srt_misc_decode_validate_key_iv: base64_decode iv failed");
-        return NGX_ERROR;
-    }
-
-    if (key->len != NGX_SRT_SET_MISC_CRYPT_KEY_LEN ||
-        iv->len != NGX_SRT_SET_MISC_CRYPT_IV_LEN)
-    {
-        ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-            "ngx_srt_misc_decode_validate_key_iv: "
-            "key length or iv length is not correct");
+            "ngx_srt_complex_value_base64: base64_decode failed");
         return NGX_ERROR;
     }
 
@@ -330,13 +301,38 @@ ngx_srt_set_misc_decrypt_variable(ngx_srt_session_t *s,
     ngx_log_debug0(NGX_LOG_DEBUG_SRT, s->connection->log, 0,
                    "srt decrypt started");
 
-    if (ngx_srt_misc_decode_validate_key_iv(s, decrypt, &key,
-        &iv, &val) != NGX_OK)
+    if (ngx_srt_complex_value_base64(s, &decrypt->key, &key) != NGX_OK) {
+        ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
+            "ngx_srt_set_misc_decrypt_variable: "
+            "ngx_srt_complex_value_base64 for key failed");
+        return NGX_ERROR;
+    }
+
+    if (ngx_srt_complex_value_base64(s, &decrypt->iv, &iv) != NGX_OK) {
+        ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
+            "ngx_srt_set_misc_decrypt_variable: "
+            "ngx_srt_complex_value_base64 for iv failed");
+        return NGX_ERROR;
+    }
+
+    if (key.len != NGX_SRT_SET_MISC_CRYPT_KEY_LEN ||
+        iv.len != NGX_SRT_SET_MISC_CRYPT_IV_LEN)
     {
         ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
             "ngx_srt_set_misc_decrypt_variable: "
-            "ngx_srt_misc_decode_validate_key_iv failed");
+            "key length or iv length is not correct");
         return NGX_ERROR;
+    }
+
+    if (ngx_srt_complex_value(s, &decrypt->value, &val) != NGX_OK) {
+        ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
+            "ngx_srt_set_misc_decrypt_variable: failed to eval val");
+        return NGX_ERROR;
+    }
+
+    if (val.len <= 0) {
+        v->not_found = 1;
+        return NGX_OK;
     }
 
     if (ngx_srt_set_misc_decrypt_aes(s->connection->pool, &key,
