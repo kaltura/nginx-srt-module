@@ -269,7 +269,7 @@ ngx_int_t
 ngx_srt_complex_value_base64(ngx_srt_session_t *s, ngx_srt_complex_value_t *val,
     ngx_str_t *dst)
 {
-    ngx_str_t value;
+    ngx_str_t  value;
 
     if (ngx_srt_complex_value(s, val, &value) != NGX_OK) {
         ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
@@ -303,15 +303,13 @@ ngx_srt_set_misc_decrypt_variable(ngx_srt_session_t *s,
 
     if (ngx_srt_complex_value_base64(s, &decrypt->key, &key) != NGX_OK) {
         ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-            "ngx_srt_set_misc_decrypt_variable: "
-            "ngx_srt_complex_value_base64 for key failed");
+            "ngx_srt_set_misc_decrypt_variable: failed to get key");
         return NGX_ERROR;
     }
 
     if (ngx_srt_complex_value_base64(s, &decrypt->iv, &iv) != NGX_OK) {
         ngx_log_error(NGX_LOG_NOTICE, s->connection->log, 0,
-            "ngx_srt_set_misc_decrypt_variable: "
-            "ngx_srt_complex_value_base64 for iv failed");
+            "ngx_srt_set_misc_decrypt_variable: failed to get iv");
         return NGX_ERROR;
     }
 
