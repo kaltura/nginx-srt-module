@@ -265,7 +265,7 @@ failed:
 }
 
 
-ngx_int_t
+static ngx_int_t
 ngx_srt_complex_value_base64(ngx_srt_session_t *s, ngx_srt_complex_value_t *val,
     ngx_str_t *dst)
 {
