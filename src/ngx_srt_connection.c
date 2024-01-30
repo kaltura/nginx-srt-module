@@ -1941,6 +1941,20 @@ ngx_srt_listen(ngx_cycle_t *cycle, ngx_listening_t *ls, ngx_log_t *error_log,
 
     ngx_srt_configure_socket(&ls->log, ss, opts);
 
+    sls = ngx_pcalloc(cycle->pool, sizeof(ngx_srt_listening_t));
+    if (sls == NULL) {
+        ngx_log_error(NGX_LOG_NOTICE, cycle->log, 0,
+            "ngx_srt_listen: ngx_srt_listen: alloc session failed");
+        return NGX_ERROR;
+    }
+
+    if (srt_listen_callback(ss, ngx_srt_listen_callback, sls) != 0) {
+        serr = srt_getlasterror(&serrno);
+        ngx_log_error(NGX_LOG_EMERG, cycle->log, serrno,
+            "ngx_srt_listen: srt_listen_callback() failed %d", serr);
+        return NGX_ERROR;
+    }
+
     if (srt_bind_acquire(ss, ls->fd) != 0) {
         serr = srt_getlasterror(&serrno);
         ngx_log_error(NGX_LOG_EMERG, cycle->log, serrno,
@@ -1964,20 +1978,6 @@ ngx_srt_listen(ngx_cycle_t *cycle, ngx_listening_t *ls, ngx_log_t *error_log,
         serr = srt_getlasterror(&serrno);
         ngx_log_error(NGX_LOG_EMERG, cycle->log, serrno,
             "ngx_srt_listen: srt_epoll_add_usock() failed %d", serr);
-        return NGX_ERROR;
-    }
-
-    sls = ngx_pcalloc(cycle->pool, sizeof(ngx_srt_listening_t));
-    if (sls == NULL) {
-        ngx_log_error(NGX_LOG_NOTICE, cycle->log, 0,
-            "ngx_srt_listen: ngx_srt_listen: alloc session failed");
-        return NGX_ERROR;
-    }
-
-    if (srt_listen_callback(ss, ngx_srt_listen_callback, sls) != 0) {
-        serr = srt_getlasterror(&serrno);
-        ngx_log_error(NGX_LOG_EMERG, cycle->log, serrno,
-            "ngx_srt_listen: srt_listen_callback() failed %d", serr);
         return NGX_ERROR;
     }
 
