@@ -100,7 +100,6 @@ typedef struct {
 
     ngx_srt_conn_options_t         srt_opts;
     ngx_srt_complex_value_t       *passphrase;
-    ngx_srt_complex_value_t       *cryptomode;
 } ngx_srt_core_srv_conf_t;
 
 
