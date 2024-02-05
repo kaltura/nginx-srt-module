@@ -1824,6 +1824,7 @@ ngx_srt_listen_callback(void *data, SRTSOCKET ns, int hs_version,
     const struct sockaddr *peeraddr, const char *stream_id)
 {
     int                       socklen;
+    int                       cryptomode;
     int                       serr, serrno;
     ngx_str_t                 value;
     ngx_log_t                *log;
@@ -1911,6 +1912,52 @@ ngx_srt_listen_callback(void *data, SRTSOCKET ns, int hs_version,
             "srt_setsockflag(SRTO_PASSPHRASE) failed %d", serr);
         goto failed;
     }
+
+   if (cscf->cryptomode != NULL) {
+        /* evaluate the cryptomode */
+        if (ngx_srt_complex_value(s, cscf->cryptomode, &value) != NGX_OK) {
+            ngx_log_error(NGX_LOG_NOTICE, log, 0,
+                "ngx_srt_listen_callback: complex value failed");
+            goto failed;
+        }
+
+        if (value.len == 0) {
+            ngx_destroy_pool(c->pool);
+            return 0;
+        }
+
+        cryptomode = (int)ngx_atoi(value.data, value.len);
+
+        /* set the cryptomode */
+        if (cryptomode > 2) {
+            ngx_log_error(NGX_LOG_ERR, log, 0,
+                "ngx_srt_listen_callback: invalid cryptomode \"%d\"", cryptomode);
+            goto failed;
+        }
+
+        if (srt_setsockflag(ns, SRTO_CRYPTOMODE, &cryptomode, sizeof(cryptomode)) != 0) {
+            serr = srt_getlasterror(&serrno);
+            ngx_log_error(NGX_LOG_ERR, log, serrno,
+                "ngx_srt_listen_callback: "
+                "srt_setsockflag(SRTO_CRYPTOMODE) failed %d", serr);
+            goto failed;
+        }
+    }
+
+
+
+
+ /*   ngx_log_error(NGX_LOG_ERR, log, 0,
+        "ngx_srt_listen_callback: "
+        "srt_setsockflag(SRTO_CRYPTOMODE) lal");
+
+    if (srt_setsockflag(ns, SRTO_CRYPTOMODE,&blocking, sizeof (blocking)) != 0) {
+        serr = srt_getlasterror(&serrno);
+        ngx_log_error(NGX_LOG_ERR, log, serrno,
+            "ngx_srt_listen_callback: "
+            "srt_setsockflag(SRTO_CRYPTOMODE) failed %d", serr);
+        goto failed;
+    }*/
 
     ngx_destroy_pool(c->pool);
 
