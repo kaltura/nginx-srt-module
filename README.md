@@ -170,6 +170,15 @@ Sets a passphrase for encryption, see the libsrt documentation of the `SRTO_PASS
 
 The parameter value can contain variables.
 
+#### cryptomode
+* **syntax**: `cryptomode expr;`
+* **default**: ``
+* **context**: `srt, server`
+
+Sets a cryptomode for encryption, see the libsrt documentation of the `SRTO_CRYPTOMODE` option for more details.
+
+The parameter value can contain variables.
+
 #### in_buf_size
 * **syntax**: `in_buf_size size;`
 * **default**: `64k`
