@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [clang-12, gcc-10]
+        compiler: [clang-14, gcc-10]
         confargs: ["--add-module=./$MODULE_NAME", '--add-dynamic-module=./$MODULE_NAME']
     env:
       CC: ${{ matrix.compiler }}
