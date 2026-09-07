@@ -181,14 +181,14 @@ Sets the size of the buffer used for reading data from the client.
 
 #### srt_stats_zone
 * **syntax**: `srt_stats_zone name:size;`
-* **default**: `srt_stats:1m`
+* **default**: —
 * **context**: `srt`
 
 Enables collection of per-connection SRT statistics and allocates a shared memory zone of the given `size` (which must be at least `8 * pagesize`) to hold them.
 
 Each worker's SRT thread refreshes the metrics of its own connections roughly once per second (via libsrt's `srt_bstats`) and publishes them into this zone. Because the zone is shared, the [`srt_stats`](#srt_stats) HTTP endpoint returns the union of all connections across all worker processes, regardless of which worker handles the request.
 
-This directive is optional: when it is absent, a built-in default zone (`srt_stats`, `1m`) is created automatically, so statistics collection is enabled out of the box. Specify the directive to override the zone name or size. Only a single zone may be defined.
+This directive is required to enable the stats feature: when it is absent no zone is created, nothing is collected, and the [`srt_stats`](#srt_stats) endpoint responds with an empty array. Only a single zone may be defined.
 
 > Note: if a worker process crashes, its entries are not removed and become stale. Each entry exposes `pid` and `uptime_sec` so consumers can detect this; a clean worker shutdown removes its entries normally.
 
@@ -372,7 +372,7 @@ The parameter value can contain variables.
 * **default**: ``
 * **context**: `location`
 
-Turns the surrounding `location` into a live SRT statistics endpoint. The handler reads the SRT statistics shared memory zone (see [`srt_stats_zone`](#srt_stats_zone), which is created with a built-in default when not configured explicitly) and responds with a JSON array (`Content-Type: application/json`) holding one object per active connection, aggregated across all worker processes. When there are no active connections, the endpoint responds with an empty array (`[]`).
+Turns the surrounding `location` into a live SRT statistics endpoint. The handler reads the SRT statistics shared memory zone (see [`srt_stats_zone`](#srt_stats_zone), which must be configured for stats to be collected) and responds with a JSON array (`Content-Type: application/json`) holding one object per active connection, aggregated across all worker processes. When [`srt_stats_zone`](#srt_stats_zone) is not configured, or there are no active connections, the endpoint responds with an empty array (`[]`).
 
 Each object contains:
 
