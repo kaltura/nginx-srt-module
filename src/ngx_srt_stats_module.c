@@ -12,8 +12,15 @@
 #include "ngx_srt_stats.h"
 
 
+#define NGX_SRT_STATS_DEFAULT_ZONE  "srt_stats"
+#define NGX_SRT_STATS_DEFAULT_SIZE  (1024 * 1024)
+
+
 static char *ngx_srt_stats_zone(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf);
+static char *ngx_srt_stats_create_zone(ngx_conf_t *cf, ngx_str_t *name,
+    ssize_t size);
+static ngx_int_t ngx_srt_stats_postconfiguration(ngx_conf_t *cf);
 static ngx_int_t ngx_srt_stats_init_zone(ngx_shm_zone_t *shm_zone, void *data);
 
 
@@ -35,7 +42,7 @@ static ngx_command_t  ngx_srt_stats_commands[] = {
 
 static ngx_srt_module_t  ngx_srt_stats_module_ctx = {
     NULL,                                  /* preconfiguration */
-    NULL,                                  /* postconfiguration */
+    ngx_srt_stats_postconfiguration,       /* postconfiguration */
 
     NULL,                                  /* create main configuration */
     NULL,                                  /* init main configuration */
@@ -64,10 +71,9 @@ ngx_module_t  ngx_srt_stats_module = {
 static char *
 ngx_srt_stats_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-    u_char          *p;
-    ssize_t          size;
-    ngx_str_t       *value, name, s;
-    ngx_shm_zone_t  *shm_zone;
+    u_char      *p;
+    ssize_t      size;
+    ngx_str_t   *value, name, s;
 
     value = cf->args->elts;
 
@@ -109,14 +115,27 @@ ngx_srt_stats_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
 
-    shm_zone = ngx_shared_memory_add(cf, &name, size, &ngx_srt_stats_module);
+    return ngx_srt_stats_create_zone(cf, &name, size);
+}
+
+
+/*
+ * Register the stats shared memory zone. Shared by the "srt_stats_zone"
+ * directive (explicit name/size) and by postconfiguration (built-in default).
+ */
+static char *
+ngx_srt_stats_create_zone(ngx_conf_t *cf, ngx_str_t *name, ssize_t size)
+{
+    ngx_shm_zone_t  *shm_zone;
+
+    shm_zone = ngx_shared_memory_add(cf, name, size, &ngx_srt_stats_module);
     if (shm_zone == NULL) {
         return NGX_CONF_ERROR;
     }
 
     if (shm_zone->data) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                           "duplicate shared memory zone \"%V\"", &name);
+                           "duplicate shared memory zone \"%V\"", name);
         return NGX_CONF_ERROR;
     }
 
@@ -125,6 +144,31 @@ ngx_srt_stats_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_srt_stats_shm_zone = shm_zone;
 
     return NGX_CONF_OK;
+}
+
+
+/*
+ * When "srt_stats_zone" is not configured, create a default zone so the SRT
+ * stats feature works out of the box. An explicit directive overrides this.
+ */
+static ngx_int_t
+ngx_srt_stats_postconfiguration(ngx_conf_t *cf)
+{
+    size_t     size;
+    ngx_str_t  name = ngx_string(NGX_SRT_STATS_DEFAULT_ZONE);
+
+    if (ngx_srt_stats_shm_zone != NULL) {
+        /* explicitly configured via "srt_stats_zone" */
+        return NGX_OK;
+    }
+
+    size = ngx_max((size_t) NGX_SRT_STATS_DEFAULT_SIZE, 8 * ngx_pagesize);
+
+    if (ngx_srt_stats_create_zone(cf, &name, (ssize_t) size) != NGX_CONF_OK) {
+        return NGX_ERROR;
+    }
+
+    return NGX_OK;
 }
 
 
