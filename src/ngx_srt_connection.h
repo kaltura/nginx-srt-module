@@ -91,6 +91,8 @@ struct ngx_srt_conn_s {
 
     ngx_srt_write_filter_ctx_t   writer_ctx;        /* ngx */
 
+    void                        *stats_node;        /* srt - shm stat entry */
+
     unsigned                     connected:1;
 };
 

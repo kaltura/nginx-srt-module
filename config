@@ -56,6 +56,7 @@ fi
 SRT_CORE_DEPS="$ngx_addon_dir/src/ngx_srt.h                       \
                $ngx_addon_dir/src/ngx_srt_connection.h            \
                $ngx_addon_dir/src/ngx_srt_script.h                \
+               $ngx_addon_dir/src/ngx_srt_stats.h                 \
                $ngx_addon_dir/src/ngx_srt_stream.h                \
                $ngx_addon_dir/src/ngx_srt_upstream.h              \
                $ngx_addon_dir/src/ngx_srt_variables.h             \
@@ -69,6 +70,7 @@ SRT_CORE_SRCS="$ngx_addon_dir/src/ngx_srt.c                       \
                $ngx_addon_dir/src/ngx_srt_set_misc_module.c       \
                $ngx_addon_dir/src/ngx_srt_proxy_module.c          \
                $ngx_addon_dir/src/ngx_srt_script.c                \
+               $ngx_addon_dir/src/ngx_srt_stats_module.c          \
                $ngx_addon_dir/src/ngx_srt_stream.c                \
                $ngx_addon_dir/src/ngx_srt_upstream.c              \
                $ngx_addon_dir/src/ngx_srt_variables.c             \
@@ -79,18 +81,27 @@ SRT_STREAM_SRCS="                                                 \
                $ngx_addon_dir/src/ngx_stream_srt_proxy_module.c   \
                "
 
+SRT_HTTP_SRCS="                                                   \
+               $ngx_addon_dir/src/ngx_http_srt_stats_module.c     \
+               "
+
 SRT_CORE_MODS="ngx_srt_module                                     \
                ngx_srt_core_module                                \
                ngx_srt_log_module                                 \
                ngx_srt_map_module                                 \
                ngx_srt_set_misc_module                            \
                ngx_srt_proxy_module                               \
+               ngx_srt_stats_module                               \
                ngx_srt_upstream_module                            \
                ngx_srt_write_filter_module                        \
                "
 
 SRT_STREAM_MODULES="                                              \
                ngx_stream_srt_proxy_module                        \
+               "
+
+SRT_HTTP_MODULES="                                                \
+               ngx_http_srt_stats_module                          \
                "
 
 if [ -n "$ngx_module_link" ]; then
@@ -109,6 +120,14 @@ if [ -n "$ngx_module_link" ]; then
         . auto/module
     fi
 
+    if [ $HTTP != NO ]; then
+        ngx_module_type=HTTP
+        ngx_module_name=$SRT_HTTP_MODULES
+        ngx_module_srcs=$SRT_HTTP_SRCS
+
+        . auto/module
+    fi
+
 else
     CORE_MODULES="$CORE_MODULES $SRT_CORE_MODS"
 
@@ -119,5 +138,10 @@ else
     if [ $STREAM != NO ]; then
         STREAM_MODULES="$STREAM_MODULES $SRT_STREAM_MODULES"
         NGX_ADDON_SRCS="$NGX_ADDON_SRCS $SRT_STREAM_SRCS"
+    fi
+
+    if [ $HTTP != NO ]; then
+        HTTP_MODULES="$HTTP_MODULES $SRT_HTTP_MODULES"
+        NGX_ADDON_SRCS="$NGX_ADDON_SRCS $SRT_HTTP_SRCS"
     fi
 fi

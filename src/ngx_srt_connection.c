@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <srt/srt.h>
 #include "ngx_srt.h"
+#include "ngx_srt_stats.h"
 
 
 #define NGX_SRT_POST_EVENTS_CHUNK  (32)
@@ -1326,6 +1327,8 @@ ngx_srt_conn_attach(ngx_srt_conn_t *sc, SRTSOCKET ss)
 
     ngx_rbtree_insert(&ngx_srt_conns, &sc->node);
 
+    ngx_srt_stats_add(sc);
+
     return NGX_OK;
 }
 
@@ -1546,6 +1549,8 @@ ngx_srt_conn_close(ngx_srt_conn_t *sc)
         }
 
         ngx_rbtree_delete(&ngx_srt_conns, &sc->node);
+
+        ngx_srt_stats_remove(sc);
 
 #if (NGX_STAT_STUB)
         if (c->listening) {
@@ -2151,6 +2156,68 @@ ngx_srt_process_events(ngx_cycle_t *cycle)
 
 
 /* Context: SRT thread */
+static void
+ngx_srt_stats_collect(void)
+{
+    static ngx_msec_t   last_run = 0;
+
+    ngx_msec_t          now;
+    SRTSOCKET           ss;
+    ngx_srt_conn_t     *sc;
+    ngx_rbtree_node_t  *node, *root, *sentinel;
+    SRT_TRACEBSTATS     stats;
+
+    if (ngx_srt_stats_shm_zone == NULL) {
+        return;
+    }
+
+    now = ngx_current_msec;
+
+    if (last_run != 0 && (ngx_msec_int_t) (now - last_run)
+        < NGX_SRT_STATS_INTERVAL)
+    {
+        return;
+    }
+
+    last_run = now;
+
+    sentinel = ngx_srt_conns.sentinel;
+    root = ngx_srt_conns.root;
+
+    if (root == sentinel) {
+        return;
+    }
+
+    for (node = ngx_rbtree_min(root, sentinel);
+         node != NULL;
+         node = ngx_rbtree_next(&ngx_srt_conns, node))
+    {
+        if (node->data) {
+            /* listening socket */
+            continue;
+        }
+
+        sc = ngx_rbtree_data(node, ngx_srt_conn_t, node);
+
+        if (sc->stats_node == NULL) {
+            continue;
+        }
+
+        ss = ngx_srt_session_sock(sc);
+        if (ss == SRT_INVALID_SOCK) {
+            continue;
+        }
+
+        if (srt_bstats(ss, &stats, 0) != 0) {
+            continue;
+        }
+
+        ngx_srt_stats_update(sc, &stats);
+    }
+}
+
+
+/* Context: SRT thread */
 static void *
 ngx_srt_thread_cycle(void *data)
 {
@@ -2173,6 +2240,8 @@ ngx_srt_thread_cycle(void *data)
         if (ngx_srt_process_events(cycle) != NGX_OK) {
             break;
         }
+
+        ngx_srt_stats_collect();
     }
 
     ngx_log_debug0(NGX_LOG_DEBUG_SRT, ngx_cycle->log, 0,

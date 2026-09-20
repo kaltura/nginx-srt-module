@@ -177,6 +177,21 @@ The parameter value can contain variables.
 
 Sets the size of the buffer used for reading data from the client.
 
+### srt stats directives
+
+#### srt_stats_zone
+* **syntax**: `srt_stats_zone name:size;`
+* **default**: —
+* **context**: `srt`
+
+Enables collection of per-connection SRT statistics and allocates a shared memory zone of the given `size` (which must be at least `8 * pagesize`) to hold them.
+
+Each worker's SRT thread refreshes the metrics of its own connections roughly once per second (via libsrt's `srt_bstats`) and publishes them into this zone. Because the zone is shared, the [`srt_stats`](#srt_stats) HTTP endpoint returns the union of all connections across all worker processes, regardless of which worker handles the request.
+
+This directive is required to enable the stats feature: when it is absent no zone is created, nothing is collected, and the [`srt_stats`](#srt_stats) endpoint responds with an empty array. Only a single zone may be defined.
+
+> Note: if a worker process crashes, its entries are not removed and become stale. Each entry exposes `pid` and `uptime_sec` so consumers can detect this; a clean worker shutdown removes its entries normally.
+
 ### srt map directives
 
 #### map
@@ -349,6 +364,86 @@ The parameter value can contain variables.
 Sets a passphrase for encryption, see the libsrt documentation of the `SRTO_PASSPHRASE` option for more details.
 
 The parameter value can contain variables.
+
+### http srt stats directives
+
+#### srt_stats
+* **syntax**: `srt_stats;`
+* **default**: ``
+* **context**: `location`
+
+Turns the surrounding `location` into a live SRT statistics endpoint. The handler reads the SRT statistics shared memory zone (see [`srt_stats_zone`](#srt_stats_zone), which must be configured for stats to be collected) and responds with a JSON array (`Content-Type: application/json`) holding one object per active connection, aggregated across all worker processes. When [`srt_stats_zone`](#srt_stats_zone) is not configured, or there are no active connections, the endpoint responds with an empty array (`[]`).
+
+Each object contains:
+
+* Identity: `pid`, `socket`, `connection` (the nginx connection serial, i.e. the `$connection` variable), `stream_id`, `remote_addr`, `status`, `uptime_sec`.
+* Packet counters (cumulative unless noted): `pkt_sent_total`, `pkt_recv_total`, `pkt_snd_loss_total`, `pkt_rcv_loss_total`, `pkt_retrans_total` (retransmitted by the sender), `pkt_rcv_retrans` (retransmitted packets received / recovered, interval-scoped), `pkt_snd_drop_total`, `pkt_rcv_drop_total`, `pkt_rcv_undecrypt_total`, `pkt_rcv_belated`.
+* Byte counters (cumulative): `byte_sent_total`, `byte_recv_total`, `byte_rcv_loss_total`, `byte_retrans_total`.
+* Instantaneous health: `ms_rtt`, `mbps_bandwidth`, `mbps_recv_rate`, `mbps_send_rate`, `pkt_flow_window`, `pkt_congestion_window`, `pkt_flight_size`, `ms_rcv_buf`, `ms_snd_buf`.
+
+All fields are taken from libsrt's `SRT_TRACEBSTATS` structure; see the libsrt documentation for their precise meaning. The values are refreshed about once per second, so the endpoint is "live to within ~1 second".
+
+Sample configuration:
+
+```
+srt {
+    srt_stats_zone srt_stats:1m;
+
+    server {
+        listen 4321;
+        proxy_pass tcp://127.0.0.1:5678;
+    }
+}
+
+http {
+    server {
+        listen 8080;
+
+        location /srt_stats {
+            srt_stats;
+        }
+    }
+}
+```
+
+Sample response:
+
+```json
+[
+  {
+    "pid": 12345,
+    "socket": 1075118292,
+    "connection": 7,
+    "status": 200,
+    "uptime_sec": 42,
+    "stream_id": "channel-1",
+    "remote_addr": "10.0.0.5",
+    "pkt_sent_total": 0,
+    "pkt_recv_total": 51234,
+    "pkt_snd_loss_total": 0,
+    "pkt_rcv_loss_total": 17,
+    "pkt_retrans_total": 0,
+    "pkt_rcv_retrans": 3,
+    "pkt_snd_drop_total": 0,
+    "pkt_rcv_drop_total": 0,
+    "pkt_rcv_undecrypt_total": 0,
+    "pkt_rcv_belated": 2,
+    "byte_sent_total": 0,
+    "byte_recv_total": 71724800,
+    "byte_rcv_loss_total": 23800,
+    "byte_retrans_total": 0,
+    "ms_rtt": 12.431,
+    "mbps_bandwidth": 120.500,
+    "mbps_recv_rate": 6.200,
+    "mbps_send_rate": 0.000,
+    "pkt_flow_window": 25600,
+    "pkt_congestion_window": 940,
+    "pkt_flight_size": 3,
+    "ms_rcv_buf": 118,
+    "ms_snd_buf": 0
+  }
+]
+```
 
 ## Embedded Variables
 
